@@ -89,6 +89,68 @@ class LEDAvant():
         print("║Exemple : 24 = éteindre L_R║")
         print("╚═══════════════════════════╝")
 
+    def blinker_left(self) :
+        delay = 0.4
+        self.switch(14)
+        self.switch(15)
+
+        time.sleep(delay)
+
+        self.switch(24)
+        self.switch(25)
+
+        time.sleep(delay)
+
+    def blinker_right(self) :
+        delay = 0.4
+        self.switch(17)
+        self.switch(18)
+
+        time.sleep(delay)
+
+        self.switch(27)
+        self.switch(28)
+
+        time.sleep(delay)
+
+    def warning(self) :
+        while True :
+            self.switch(14)
+            self.switch(15)
+            self.switch(17)
+            self.switch(18)
+
+            time.sleep(0.5)
+
+            self.switch(24)
+            self.switch(25)
+            self.switch(27)
+            self.switch(28)
+
+            time.sleep(0.5)
+
+    def appel_de_phares(self) :
+        delay = 0.1
+
+        for i in range (3) :
+            self.switch(14)
+            self.switch(15)
+            self.switch(16)
+            self.switch(17)
+            self.switch(18)
+            self.switch(19)
+
+            time.sleep(delay)
+
+            self.switch(24)
+            self.switch(25)
+            self.switch(26)
+            self.switch(27)
+            self.switch(28)
+            self.switch(29)
+
+            time.sleep(delay)
+
 def main():
     robot = LEDAvant()
     while True:
