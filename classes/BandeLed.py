@@ -266,9 +266,14 @@ class BandeLed(threading.Thread):
             self.lightChange()
             pass
         
-    def set_led_color(self, led_num, colour = [255, 255, 255], brightness = 255):
+    def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
         self.set_led_color(led_num, colour[0], colour[1], colour[2])
+        self.show()
+        
+    def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
+        self.led_brightness = brightness
+        self.set_led_color(2, colour[0], colour[1], colour[2])
         self.show()
         
 if __name__ == '__main__':
@@ -282,7 +287,7 @@ if __name__ == '__main__':
         led = BandeLed(14, 255)
         
         if led.check_spi_state() != 0:
-            led.set_led_color(2, [255, 0, 255],255)
+            led.set_back_leds([255, 0, 255],255)
             time.sleep(7000)
         else:
             led.led_close()
