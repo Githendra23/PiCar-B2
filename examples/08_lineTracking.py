@@ -1,28 +1,42 @@
-import time
-import argparse
 from gpiozero import InputDevice
+import time
 
-line_pin_left = 22
-line_pin_middle = 27
-line_pin_right = 17
+class CapteurSuiviLigne:
+    _broche_ligne_gauche = 22
+    _broche_ligne_milieu = 27
+    _broche_ligne_droite = 17
 
-left = InputDevice(pin=line_pin_right)
-middle = InputDevice(pin=line_pin_middle)
-right = InputDevice(pin=line_pin_left)
+    def __init__(self):
+        self._capteur_gauche = InputDevice(pin=self._broche_ligne_gauche)
+        self._capteur_milieu = InputDevice(pin=self._broche_ligne_milieu)
+        self._capteur_droite = InputDevice(pin=self._broche_ligne_droite)
 
-def run():
-    status_right = right.value
-    status_middle = middle.value
-    status_left = left.value
-    print('left: %d   middle: %d   right: %d' %(status_right,status_middle,status_left))
+    def statut_gauche(self):
+        return self._capteur_gauche.value
 
+    def statut_milieu(self):
+        return self._capteur_milieu.value
+
+    def statut_droite(self):
+        return self._capteur_droite.value
+
+    def statut(self):
+        return (
+            self.statut_gauche(),
+            self.statut_milieu(),
+            self.statut_droite()
+        )
 
 if __name__ == '__main__':
     try:
-      while 1:
-        run()
-        time.sleep(0.3)
+        capteur_ligne = CapteurSuiviLigne()
+
+        while True:
+            print(
+                'gauche: %0.1f milieu: %0.1f droite: %0.1f'
+                % capteur_ligne.statut()
+            )
+            time.sleep(0.3)
+
     except KeyboardInterrupt:
         pass
-
-
