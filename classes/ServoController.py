@@ -14,25 +14,21 @@ from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
 
 class ServoController:
-    def __init__(self, i2c_address=0x5f, frequency=50, min_pulse=500, max_pulse=2400, actuation_range=180):
+    def __init__(self):
         self.i2c = busio.I2C(SCL, SDA)
-        self.pca = PCA9685(self.i2c, address=i2c_address)
-        self.pca.frequency = frequency
-        self.min_pulse = min_pulse
-        self.max_pulse = max_pulse
-        self.actuation_range = actuation_range
-        self.servos = {}  # Dictionnaire pour ranger les instances de servo
+        self.pca = PCA9685(self.i2c, address=0x5f)
+        self.pca.frequency = 50
+        self.min_pulse = 500
+        self.max_pulse = 2400
+        self.actuation_range = 180
+        self.servos = {} # Dictionnaire pour ranger les instances de servo
 
-    def add_servo(self, channel, min_pulse=None, max_pulse=None, actuation_range=None):
-        min_pulse = min_pulse if min_pulse is not None else self.min_pulse
-        max_pulse = max_pulse if max_pulse is not None else self.max_pulse
-        actuation_range = actuation_range if actuation_range is not None else self.actuation_range
-
+    def add_servo(self, channel):
         self.servos[channel] = servo.Servo(
             self.pca.channels[channel],
-            min_pulse=min_pulse,
-            max_pulse=max_pulse,
-            actuation_range=actuation_range
+            min_pulse=self.min_pulse,
+            max_pulse=self.max_pulse,
+            actuation_range=self.actuation_range
         )
 
     def set_angle(self, channel, angle):
@@ -63,7 +59,7 @@ class ServoController:
 
 if __name__ == "__main__":
 
-    servo_controller = ServoController(i2c_address=0x5f)
+    servo_controller = ServoController()
     
     servo_controller.add_servo(channel=2)
     
