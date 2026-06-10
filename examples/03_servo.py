@@ -13,32 +13,60 @@ import busio
 from adafruit_motor import servo
 from adafruit_pca9685 import PCA9685
 
-i2c = busio.I2C(SCL, SDA)
-# Create a simple PCA9685 class instance.
-pca = PCA9685(i2c, address=0x5f) #default 0x40
+class ServoController:
+    def __init__(self, i2c_address=0x5f, frequency=50, min_pulse=500, max_pulse=2400, actuation_range=180):
+        self.i2c = busio.I2C(SCL, SDA)
+        self.pca = PCA9685(self.i2c, address=i2c_address)
+        self.pca.frequency = frequency
+        self.min_pulse = min_pulse
+        self.max_pulse = max_pulse
+        self.actuation_range = actuation_range
+        self.servos = {}  # Dictionnaire pour ranger les instances de servo
 
-pca.frequency = 50
+    def add_servo(self, channel, min_pulse=None, max_pulse=None, actuation_range=None):
+        min_pulse = min_pulse if min_pulse is not None else self.min_pulse
+        max_pulse = max_pulse if max_pulse is not None else self.max_pulse
+        actuation_range = actuation_range if actuation_range is not None else self.actuation_range
 
-# The pulse range is 750 - 2250 by default. This range typically gives 135 degrees of
-# range, but the default is to use 180 degrees. You can specify the expected range if you wish:
-# servo7 = servo.Servo(pca.channels[7], actuation_range=135)
-def set_angle(ID, angle):
-    servo_angle = servo.Servo(pca.channels[ID], min_pulse=500, max_pulse=2400,actuation_range=180)
-    servo_angle.angle = angle
+        self.servos[channel] = servo.Servo(
+            self.pca.channels[channel],
+            min_pulse=min_pulse,
+            max_pulse=max_pulse,
+            actuation_range=actuation_range
+        )
 
+    def set_angle(self, channel, angle):
+        if channel in self.servos:
+            self.servos[channel].angle = angle
+        else:
+            raise ValueError(f"Aucun servo configuré sur le cannal {channel}.")
 
-def test(channel):
-    for i in range(180): # The servo turns from 0 to 180 degrees.
-        set_angle(channel, i)
-        time.sleep(0.01)
-    time.sleep(0.5)
-    for i in range(180): # The servo turns from 180 to 0 degrees.
-        set_angle(channel, 180-i)
-        time.sleep(0.01)
-    time.sleep(0.5)
+    def sweep(self, channel, start_angle=0, end_angle=180, step=1, delay=0.01):
+        if channel not in self.servos:
+            raise ValueError(f"Aucun servo configuré sur le cannal {channel}.")
+
+        for angle in range(start_angle, end_angle + 1, step):
+            self.set_angle(channel, angle)
+            time.sleep(delay)
+
+        time.sleep(0.5)
+
+        for angle in range(end_angle, start_angle -1, -step):
+            self.set_angle(channel, angle)
+            time.sleep(delay)
+
+        time.sleep(0.5)
+
+    def test(self, channel):
+
+        self.sweep(channel, start_angle=0, enf_angle=180)
 
 if __name__ == "__main__":
-    channel = 1
+
+    servo_controller = ServoController(i2c_address=0x5f)
+    
+    servo_controller.add_servo(channel=2)
+    
     while True:
-        test(channel)
+        servo_controller.test(channel=2)
 
