@@ -1,0 +1,100 @@
+from gpiozero import PWMOutputDevice as PWM
+from gpiozero import LED
+import time
+
+Left_R = 13
+Left_G = 19
+Left_B = 0
+
+Right_R = 1
+Right_G = 5
+Right_B = 6
+
+class LEDAvant():
+    def __init__(self):
+        self.led1 = LED(9)
+        self.led2 = LED(25)
+        self.led3 = LED(11)
+        
+        self.L_R = PWM(pin=Left_R, initial_value=1.0, frequency=2000)
+        self.L_G = PWM(pin=Left_G, initial_value=1.0, frequency=2000)
+        self.L_B = PWM(pin=Left_B, initial_value=1.0, frequency=2000)
+        
+        self.R_R = PWM(pin=Right_R, initial_value=1.0, frequency=2000)
+        self.R_G = PWM(pin=Right_G, initial_value=1.0, frequency=2000)
+        self.R_B = PWM(pin=Right_B, initial_value=1.0, frequency=2000)
+
+    def switch(self, commande):
+        match commande:
+            case 11:
+                self.led1.on()
+            case 21:
+                self.led1.off()
+
+            case 12:
+                self.led2.on()
+            case 22:
+                self.led2.off()
+
+            case 13:
+                self.led3.on()
+            case 23:
+                self.led3.off()
+
+            case 14:
+                self.L_R.value = 0.0
+            case 24:
+                self.L_R.value = 1.0
+
+            case 15:
+                self.L_G.value = 0.0
+            case 25:
+                self.L_G.value = 1.0
+
+            case 16:
+                self.L_B.value = 0.0
+            case 26:
+                self.L_B.value = 1.0
+
+            case 17:
+                self.R_R.value = 0.0
+            case 27:
+                self.R_R.value = 1.0  
+
+            case 18:
+                self.R_G.value = 0.0
+            case 28:
+                self.R_G.value = 1.0
+
+            case 19:
+                self.R_B.value = 0.0
+            case 29:
+                self.R_B.value = 1.0
+
+            case default:
+                return "Invalid command"
+            
+    def instruction(self):
+        print("╔═════════╦════════╦════════╗")
+        print("║    11   ║   12   ║   13   ║")
+        print("║   LED1  ║  LED2  ║  LED3  ║")
+        print("╠═════════╬════════╬════════╣")
+        print("║    14   ║   15   ║   16   ║")
+        print("║   L_R   ║  L_G   ║  L_B   ║")
+        print("╠═════════╬════════╬════════╣")
+        print("║    17   ║   18   ║   19   ║")
+        print("║   R_R   ║  R_G   ║  R_B   ║")
+        print("╠═════════╩════════╩════════╣")
+        print("║Éteindre : +10             ║")
+        print("║Exemple : 24 = éteindre L_R║")
+        print("╚═══════════════════════════╝")
+
+def main():
+    robot = LEDAvant()
+    while True:
+        robot.instruction()
+        commande = int(input("Commande : "))
+        robot.switch(commande)
+
+if __name__ == "__main__":
+    main()

@@ -103,7 +103,7 @@ class Adeept_SPI_LedPixel(threading.Thread):
         
     def set_led_color(self, index, r, g, b):
         self.set_ledpixel(index, r, g, b)
-        self.show() 
+        self.show()
         
     def set_led_rgb(self, index, color):
         self.set_led_rgb_data(index, color)   
@@ -263,9 +263,13 @@ class Adeept_SPI_LedPixel(threading.Thread):
             self.__flag.wait()
             self.lightChange()
             pass
-        
-            
-    
+
+    # Codé par Githendra
+    def set_led_color(self, led_num, colour = [255, 255, 255], brightness = 255):
+        self.led_brightness = brightness
+        self.set_led_color(led_num, colour[0], colour[1], colour[2])
+        self.show()
+
 if __name__ == '__main__':
     import time
     import os
@@ -273,48 +277,13 @@ if __name__ == '__main__':
     print("spidev device as show:")
     os.system("ls /dev/spi*")
     
-    led = Adeept_SPI_LedPixel(8, 255)              # Use MOSI for /dev/spidev0 to drive the lights
+    led = Adeept_SPI_LedPixel(14, 255)            # Use MOSI for /dev/spidev0 to drive the lights
 
     try:
         if led.check_spi_state() != 0:
-            led.set_led_count(8)
-            led.set_all_led_color_data(255, 0, 0)
-            led.show()
-            time.sleep(0.5)
-            led.set_all_led_rgb_data([0, 255, 0])
-            led.show()
-            time.sleep(0.5)
-            led.set_all_led_color(0, 0, 255)
-            time.sleep(0.5)
-            led.set_all_led_rgb([0, 255, 255])
-            time.sleep(0.5)
-
-            led.set_led_count(12)
-            led.set_all_led_color_data(255, 255, 0)
-            for i in range(255):
-                led.set_led_brightness(i)
-                led.show()
-                time.sleep(0.005)
-            for i in range(255):
-                led.set_led_brightness(255-i)
-                led.show()
-                time.sleep(0.005)
-                  
-            led.set_led_brightness(20)
-            while True:
-                for j in range(255):
-                    for i in range(led.led_count):
-                        led.set_led_rgb_data(i, led.wheel((round(i * 255 / led.led_count) + j)%256))
-                    led.show()
-                    time.sleep(0.002)
+            led.set_led_color(2, [255, 0, 255],255)
+            time.sleep(7000)
         else:
             led.led_close()
     except KeyboardInterrupt:
         led.led_close()
-        
-    
-
-
-
-
-
