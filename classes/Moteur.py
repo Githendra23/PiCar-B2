@@ -83,6 +83,15 @@ class Moteur:
         self.stop()
         pwm_motor.deinit()
 
+    # INUTILE, ABÎME LA MÉCANIQUE SUR LE LONG TERME => A UTILISER LORSQUE
+    # LE DIFFÉRENTIEL N'EST PAS RELIÉ AUX ROUES !!
+    # METTRE UN RÉDUCTEUR DE COUPLE ÉLECTRONIQUE (TC ?)
+    def launch_control(self) :
+        print(f"LAUNCH CONTROL ! Vitesse : {100}")
+        while True :
+            self.moteur.throttle = 1.0
+            time.sleep(0.1)
+
 m1 = Moteur(motor1)
 
 if __name__ == '__main__':
