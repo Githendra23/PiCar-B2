@@ -59,7 +59,7 @@ class ServoController:
 
     def test(self, channel):
 
-        self.sweep(channel, start_angle=0, enf_angle=180)
+        self.sweep(channel, start_angle=0, end_angle=180)
 
 if __name__ == "__main__":
 
