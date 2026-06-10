@@ -265,9 +265,9 @@ class Adeept_SPI_LedPixel(threading.Thread):
             pass
 
     # Codé par Githendra
-    def nColour(self, index, colour = [255, 255, 255], brightness = 255):
+    def set_led_color(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
-        self.set_led_color(index, colour[0], colour[1], colour[2])
+        self.set_led_color(led_num, colour[0], colour[1], colour[2])
         self.show()
 
 if __name__ == '__main__':
@@ -281,7 +281,7 @@ if __name__ == '__main__':
 
     try:
         if led.check_spi_state() != 0:
-            led.nColour(2, [255, 0, 255],255)
+            led.set_led_color(2, [255, 0, 255],255)
             time.sleep(7000)
         else:
             led.led_close()
