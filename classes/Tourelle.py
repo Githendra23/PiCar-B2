@@ -8,6 +8,8 @@ class Tourelle:
         self.controller = controller
         self.controller.add_servo(self.CHANNEL_PAN)
         self.controleler.add_servo(self.CHANNEL_TILT)
+
+        self.reset()
         
     def pan(self, angle):
         ANGLE_MAX = 180
