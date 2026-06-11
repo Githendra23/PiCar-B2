@@ -10,7 +10,9 @@ Right_R = 1
 Right_G = 5
 Right_B = 6
 
+
 class LEDAvant():
+    # Constructeur
     def __init__(self):
         self.led1 = LED(9)
         self.led2 = LED(25)
@@ -24,56 +26,59 @@ class LEDAvant():
         self.R_G = PWM(pin=Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=Right_B, initial_value=1.0, frequency=2000)
 
+    # Méthode de contrôle des LEDs
     def switch(self, commande):
         match commande:
-            case 11:
+            case 11: # Allumer la LED n°1
                 self.led1.on()
-            case 21:
+            case 21: # Éteindre la LED n°1
                 self.led1.off()
 
-            case 12:
+            case 12: # Allumer la LED n°2
                 self.led2.on()
-            case 22:
+            case 22: # Éteindre la LED n°2
                 self.led2.off()
 
-            case 13:
+            case 13: # Allumer la LED n°3
                 self.led3.on()
-            case 23:
+            case 23: # Éteindre la LED n°3
                 self.led3.off()
 
-            case 14:
+            
+            case 14: # Allumer la LED rouge de gauche
                 self.L_R.value = 0.0
-            case 24:
+            case 24: # Éteindre la LED rouge de gauche
                 self.L_R.value = 1.0
 
-            case 15:
+            case 15: # Allumer la LED verte de gauche
                 self.L_G.value = 0.0
-            case 25:
+            case 25: # Éteindre la LED verte de gauche
                 self.L_G.value = 1.0
 
-            case 16:
+            case 16: # Allumer la LED bleue de gauche
                 self.L_B.value = 0.0
-            case 26:
+            case 26: # Éteindre la LED bleue de gauche
                 self.L_B.value = 1.0
 
-            case 17:
+            case 17: # Allumer la LED rouge de droite
                 self.R_R.value = 0.0
-            case 27:
+            case 27: # Éteindre la LED rouge de droite
                 self.R_R.value = 1.0  
 
-            case 18:
+            case 18: # Allumer la LED verte de gauche
                 self.R_G.value = 0.0
-            case 28:
+            case 28: # Éteindre la LED verte de gauche
                 self.R_G.value = 1.0
 
-            case 19:
+            case 19: # Allumer la LED bleue de gauche
                 self.R_B.value = 0.0
-            case 29:
+            case 29: # Éteindre la LED bleue de gauche
                 self.R_B.value = 1.0
 
-            case default:
+            case default: # Les autres cas
                 return "Invalid command"
-            
+    
+    # Les instructions pour allumer chaque RGB (gauche et droit) individuellement
     def instruction(self):
         print("╔═════════╦════════╦════════╗")
         print("║    11   ║   12   ║   13   ║")
@@ -89,45 +94,48 @@ class LEDAvant():
         print("║Exemple : 24 = éteindre L_R║")
         print("╚═══════════════════════════╝")
 
+    # Clignotant gauche
     def blinker_left(self) :
-        delay = 0.4
+        # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
+        delay = 0.5
+
         self.switch(14)
         self.switch(15)
-
         time.sleep(delay)
 
         self.switch(24)
         self.switch(25)
-
         time.sleep(delay)
 
+    # Clignotant droit
     def blinker_right(self) :
+        # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
         delay = 0.4
+        
         self.switch(17)
         self.switch(18)
-
         time.sleep(delay)
 
         self.switch(27)
         self.switch(28)
-
         time.sleep(delay)
 
+    # Feux de détresse
     def warning(self) :
+        # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
         self.switch(14)
         self.switch(15)
         self.switch(17)
         self.switch(18)
-
         time.sleep(0.5)
 
         self.switch(24)
         self.switch(25)
         self.switch(27)
         self.switch(28)
-
         time.sleep(0.5)
 
+    # Fait des appels de phare
     def appel_de_phares(self) :
         delay = 0.1
 
@@ -138,7 +146,6 @@ class LEDAvant():
             self.switch(17)
             self.switch(18)
             self.switch(19)
-
             time.sleep(delay)
 
             self.switch(24)
@@ -147,16 +154,12 @@ class LEDAvant():
             self.switch(27)
             self.switch(28)
             self.switch(29)
-
             time.sleep(delay)
-
-def main():
-    robot = LEDAvant()
-    while True:
-        robot.instruction()
-        commande = int(input("Commande : "))
-        robot.switch(commande)
+    
 
 if __name__ == "__main__":
-    main()
-
+    ledAvant = LEDAvant()
+    while True:
+        ledAvant.instruction()
+        commande = int(input("Commande : "))
+        ledAvant.switch(commande)
