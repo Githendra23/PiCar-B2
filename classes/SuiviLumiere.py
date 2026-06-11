@@ -12,7 +12,7 @@ import Servos
 # ======================
 DISTANCE_OBSTACLE_MM = 200      # 20 cm
 
-VITESSE_AVANCE = 30
+VITESSE_AVANCE = 50
 VITESSE_RECUL = 25              # vitesse réduite
 TEMPS_RECUL = 1.2               # à ajuster pour obtenir environ 30 cm
 TEMPS_ARRET_APRES_OBSTACLE = 2.0
@@ -20,14 +20,16 @@ TEMPS_DETRESSE = 1.0
 
 # Canaux du capteur de lumière sur le PCF8591.
 # Si les valeurs ne correspondent pas, tester 0/1, 1/2, 2/3 selon le branchement.
-CH_LUMIERE_GAUCHE = 0
-CH_LUMIERE_DROITE = 1
+CH_LUMIERE = 1
+
+SEUIL_BAS = 45
+SEUIL_HAUT = 95
 
 # Mettre False si la valeur analogique baisse quand on éclaire le capteur.
 VALEUR_PLUS_GRANDE_QUAND_PLUS_LUMINEUX = True
 
 # Servo de direction.
-SERVO_DIRECTION_CHANNEL = 2
+SERVO_DIRECTION_CHANNEL = 0
 ANGLE_CENTRE = 90
 ANGLE_GAUCHE = 60
 ANGLE_DROITE = 120
@@ -181,17 +183,22 @@ def valeur_lumiere(channel):
 
 
 def suivre_lumiere():
-    """Oriente le servo vers le côté le plus lumineux et avance."""
-    gauche = valeur_lumiere(CH_LUMIERE_GAUCHE)
-    droite = valeur_lumiere(CH_LUMIERE_DROITE)
-    ecart = gauche - droite
+    """
+    Lit la valeur unique du module Light Tracking.
+    - valeur normale autour de 60-80 : centre
+    - valeur haute > 95 : LDR1
+    - valeur basse < 45 : LDR2
+    """
+    lumiere = capteur_lumiere.analogRead(CH_LUMIERE)
 
-    if abs(ecart) <= SEUIL_ECART_LUMIERE:
-        angle = ANGLE_CENTRE
-    elif ecart > 0:
+    if lumiere > SEUIL_HAUT:
         angle = ANGLE_GAUCHE
-    else:
+
+    elif lumiere < SEUIL_BAS:
         angle = ANGLE_DROITE
+
+    else:
+        angle = ANGLE_CENTRE
 
     if INVERSER_DIRECTION:
         if angle == ANGLE_GAUCHE:
@@ -202,7 +209,7 @@ def suivre_lumiere():
     mettre_direction(angle)
     avancer(VITESSE_AVANCE)
 
-    return gauche, droite, angle
+    return lumiere, angle
 
 
 def gerer_obstacle():
@@ -257,13 +264,13 @@ if __name__ == "__main__":
                 gerer_obstacle()
                 continue
 
-            gauche, droite, angle = suivre_lumiere()
+            lumiere, angle = suivre_lumiere()
 
             # Affichage limité pour ne pas saturer le terminal.
             if time.time() - dernier_affichage > 0.5:
                 print(
                     f"distance={distance:.0f} mm | "
-                    f"lumière gauche={gauche} droite={droite} | "
+                    f"Light tracking value: {lumiere} | "
                     f"angle={angle}"
                 )
                 dernier_affichage = time.time()
