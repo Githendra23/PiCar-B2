@@ -1,19 +1,29 @@
-import ServoController
+from classes.ServoController import ServoController
 
 class Roues:
-    def __innit__(self, controller: ServoController):
+    def __init__(self, controller: ServoController):
         self.CHANNEL = 0
+
+        self.ANGLE_MIN = 0
+        self.ANGLE_MAX = 130
+        self.ANGLE_CENTER = 90
         
         self.controller = controller
         self.controller.add_servo(self.CHANNEL)
         self.reset()
     
     def turn(self, angle):
-        ANGLE_MIN = 0
-        ANGLE_MAX = 130
-        
-        if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
+        if (angle >= self.ANGLE_MIN and angle <= self.ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL, angle)
-            
+
+    def getAngleMin(self):
+        return self.ANGLE_MIN
+
+    def getAngleMax(self):
+        return self.ANGLE_MAX
+
+    def getAngleCenter(self):
+        return self.ANGLE_CENTER
+
     def reset(self):
-        self.controller.set_angle(self.CHANNEL, 90)
+        self.controller.set_angle(self.CHANNEL, self.ANGLE_CENTER)
