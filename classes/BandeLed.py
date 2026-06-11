@@ -5,7 +5,7 @@ from numpy import sin, cos, pi
 import time
 
 class BandeLed(threading.Thread):
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         count = 14
         bus = 0
         device = 0
@@ -21,7 +21,6 @@ class BandeLed(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(BandeLed, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
 
