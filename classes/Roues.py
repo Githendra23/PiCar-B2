@@ -1,7 +1,7 @@
-import ServoController
+from classes.ServoController import ServoController
 
 class Roues:
-    def __innit__(self, controller: ServoController):
+    def __init__(self, controller: ServoController):
         self.CHANNEL = 0
         
         self.controller = controller

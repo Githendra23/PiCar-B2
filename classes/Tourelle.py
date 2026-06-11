@@ -1,4 +1,4 @@
-import ServoController
+from classes.ServoController import ServoController
 
 class Tourelle:
     def __init__(self, controller : ServoController):
