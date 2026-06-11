@@ -6,7 +6,7 @@ class Roues:
         
         self.controller = controller
         self.controller.add_servo(self.CHANNEL)
-        self.controller.set_angle(90)
+        self.reset()
     
     def turn(self, angle):
         ANGLE_MIN = 0

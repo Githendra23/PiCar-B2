@@ -1,4 +1,5 @@
 import RPi.GPIO as GPIO
+import CapteurSuiviLigne
 import time
 
 previous_time = 0
@@ -17,7 +18,7 @@ def delay(ms):
 if __name__ == '__main__':
     try:
         while True:
-            # Code principal
+            time.sleep(0.05)
     except KeyboardInterrupt:
         print("Fin de programme par Ctrl-C")
     finally:
