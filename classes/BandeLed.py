@@ -5,10 +5,14 @@ from numpy import sin, cos, pi
 import time
 
 class BandeLed(threading.Thread):
-    def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
-        self.set_led_type(sequence)
+    def __init__(self, *args, **kwargs):
+        count = 14
+        bus = 0
+        device = 0
+
+        self.set_led_type('GRB')
         self.set_led_count(count)
-        self.set_led_brightness(bright)
+        self.set_led_brightness(0)
         self.led_begin(bus, device)
         self.lightMode = 'none'
         self.colorBreathR = 0
@@ -20,9 +24,11 @@ class BandeLed(threading.Thread):
         super(BandeLed, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
+
     def led_begin(self, bus = 0, device = 0):
         self.bus = bus
         self.device = device
+
         try:
             self.spi = spidev.SpiDev()
             self.spi.open(self.bus, self.device)
@@ -30,11 +36,13 @@ class BandeLed(threading.Thread):
             self.led_init_state = 1
         except OSError:
             print("Please check the configuration in /boot/firmware/config.txt.")
+
             if self.bus == 0:
                 print("You can turn on the 'SPI' in 'Interface Options' by using 'sudo raspi-config'.")
                 print("Or make sure that 'dtparam=spi=on' is not commented, then reboot the Raspberry Pi. Otherwise spi0 will not be available.")
             else:
                 print("Please add 'dtoverlay=spi{}-2cs' at the bottom of the /boot/firmware/config.txt, then reboot the Raspberry Pi. otherwise spi{} will not be available.".format(self.bus, self.bus))
+
             self.led_init_state = 0
             
     def check_spi_state(self):
@@ -73,6 +81,7 @@ class BandeLed(threading.Thread):
             self.led_red_offset = (led_type_offset[index]>>4) & 0x03
             self.led_green_offset = (led_type_offset[index]>>2) & 0x03
             self.led_blue_offset = (led_type_offset[index]>>0) & 0x03
+
             return index
         except ValueError:
             self.led_red_offset = 1
@@ -82,6 +91,7 @@ class BandeLed(threading.Thread):
     
     def set_led_brightness(self, brightness):
         self.led_brightness = brightness
+
         for i in range(self.led_count):
             self.set_led_rgb_data(i, self.led_original_color)
             
@@ -93,6 +103,7 @@ class BandeLed(threading.Thread):
         self.led_original_color[index*3+self.led_red_offset] = r
         self.led_original_color[index*3+self.led_green_offset] = g
         self.led_original_color[index*3+self.led_blue_offset] = b
+
         for i in range(3):
             self.led_color[index*3+i] = p[i]
 
@@ -121,18 +132,22 @@ class BandeLed(threading.Thread):
     def set_all_led_color(self, r, g, b):
         for i in range(self.led_count):
             self.set_led_color_data(i, r, g, b)
+
         self.show()
         
     def set_all_led_rgb(self, color):
         for i in range(self.led_count):
-            self.set_led_rgb_data(i, color) 
+            self.set_led_rgb_data(i, color)
+
         self.show()
     
     def write_ws2812_numpy8(self):
         d = numpy.array(self.led_color).ravel()        #Converts data into a one-dimensional array
         tx = numpy.zeros(len(d)*8, dtype=numpy.uint8)  #Each RGB color has 8 bits, each represented by a uint8 type data
+
         for ibit in range(8):                          #Convert each bit of data to the data that the spi will send
-            tx[7-ibit::8]=((d>>ibit)&1)*0x78 + 0x80    #T0H=1,T0L=7, T1H=5,T1L=3   #0b11111000 mean T1(0.78125us), 0b10000000 mean T0(0.15625us)  
+            tx[7-ibit::8]=((d>>ibit)&1)*0x78 + 0x80    #T0H=1,T0L=7, T1H=5,T1L=3   #0b11111000 mean T1(0.78125us), 0b10000000 mean T0(0.15625us)
+
         if self.led_init_state != 0:
             if self.bus == 0:
                 self.spi.xfer(tx.tolist(), int(8/1.25e-6))         #Send color data at a frequency of 6.4Mhz
@@ -142,8 +157,10 @@ class BandeLed(threading.Thread):
     def write_ws2812_numpy4(self):
         d=numpy.array(self.led_color).ravel()
         tx=numpy.zeros(len(d)*4, dtype=numpy.uint8)
+
         for ibit in range(4):
-            tx[3-ibit::4]=((d>>(2*ibit+1))&1)*0x60 + ((d>>(2*ibit+0))&1)*0x06 + 0x88  
+            tx[3-ibit::4]=((d>>(2*ibit+1))&1)*0x60 + ((d>>(2*ibit+0))&1)*0x06 + 0x88
+
         if self.led_init_state != 0:
             if self.bus == 0:
                 self.spi.xfer(tx.tolist(), int(4/1.25e-6))         
@@ -156,49 +173,6 @@ class BandeLed(threading.Thread):
         else:
             write_ws2812 = self.write_ws2812_numpy4
         write_ws2812()
-        
-    def wheel(self, pos):
-        if pos < 85:
-            return [(255 - pos * 3), (pos * 3), 0]
-        elif pos < 170:
-            pos = pos - 85
-            return [0, (255 - pos * 3), (pos * 3)]
-        else:
-            pos = pos - 170
-            return [(pos * 3), 0, (255 - pos * 3)]
-    
-    def hsv2rgb(self, h, s, v):
-        h = h % 360
-        rgb_max = round(v * 2.55)
-        rgb_min = round(rgb_max * (100 - s) / 100)
-        i = round(h / 60)
-        diff = round(h % 60)
-        rgb_adj = round((rgb_max - rgb_min) * diff / 60)
-        if i == 0:
-            r = rgb_max
-            g = rgb_min + rgb_adj
-            b = rgb_min
-        elif i == 1:
-            r = rgb_max - rgb_adj
-            g = rgb_max
-            b = rgb_min
-        elif i == 2:
-            r = rgb_min
-            g = rgb_max
-            b = rgb_min + rgb_adj
-        elif i == 3:
-            r = rgb_min
-            g = rgb_max - rgb_adj
-            b = rgb_max
-        elif i == 4:
-            r = rgb_min + rgb_adj
-            g = rgb_min
-            b = rgb_max
-        else:
-            r = rgb_max
-            g = rgb_min
-            b = rgb_max - rgb_adj
-        return [r, g, b]
     
     def police(self):
         self.lightMode = 'police'
@@ -220,12 +194,15 @@ class BandeLed(threading.Thread):
             for i in range(0,self.breathSteps):
                 if self.lightMode != 'breath':
                     break
+
                 self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
                 #self.show()
                 time.sleep(0.03)
+
             for i in range(0,self.breathSteps):
                 if self.lightMode != 'breath':
                     break
+
                 self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
                 #self.show()
                 time.sleep(0.03)
@@ -239,9 +216,12 @@ class BandeLed(threading.Thread):
                 self.set_all_led_color_data(0,0,0)
                 self.show()
                 time.sleep(0.05)
+
             if self.lightMode != 'police':
                 break
+
             time.sleep(0.1)
+
             for i in range(0,3):
                 self.set_all_led_color_data(255,0,0)
                 self.show()
@@ -250,21 +230,14 @@ class BandeLed(threading.Thread):
                 self.show()
                 time.sleep(0.05)
             time.sleep(0.1)
-            
-            
+
     def lightChange(self):
         if self.lightMode == 'none':
             self.pause()
         elif self.lightMode == 'police':
             self.policeProcessing()
         elif self.lightMode == 'breath':
-            self.breathProcessing()    
-    
-    def run(self):
-        while 1:
-            self.__flag.wait()
-            self.lightChange()
-            pass
+            self.breathProcessing()
         
     def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
@@ -310,9 +283,9 @@ if __name__ == '__main__':
     print("spidev device as show:")
     os.system("ls /dev/spi*")
 
+    led = BandeLed()
+
     try:
-        led = BandeLed(14, 255)
-        
         if led.check_spi_state() != 0:
             led.set_back_leds([255, 0, 255],255)
             time.sleep(7000)
