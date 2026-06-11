@@ -36,17 +36,6 @@ def check_speed(vitesse) :
         vitesse = VMIN
     return vitesse
 
-# Pour un démarrage progressif afin de ne pas abîmer le différentiel
-def progress_start(speed) :
-    speed = check_speed(speed)
-    for i in range(speed) :
-        v = i
-        if(speed < 0) :
-            v = -i
-        unMoteur.moteur.throttle = map(v,0,100,0,1.0)
-        time.sleep(0.05)
-
-
 class Moteur:
     def __init__(self):
         self.moteur = motor.DCMotor(pwm_motor.channels[MOTOR_M1_IN1],pwm_motor.channels[MOTOR_M1_IN2] )
@@ -64,6 +53,17 @@ class Moteur:
         print(f"Le moteur recule ! Vitesse : {vitesse}")
         self.moteur.throttle = -map(vitesse, 0, 100, 0, 1.0)
 
+    # Pour un démarrage progressif afin de ne pas abîmer le différentiel
+    def progress_start(self, speed, direction) :
+        speed = check_speed(speed)
+        for i in range(speed) :
+            if(direction < 0) :
+              direction = -1
+            else :
+              direction = 1
+            unMoteur.moteur.throttle = direction*map(i,0,100,0,1.0)
+            time.sleep(0.05)
+  
     # Arrêter le moteur
     def stop(self):
         print("Le moteur est à l'arrêt !")
@@ -74,15 +74,6 @@ class Moteur:
         print("Destruction du moteur.")
         self.stop()
         pwm_motor.deinit()
-
-    # INUTILE, ABÎME LA MÉCANIQUE SUR LE LONG TERME => A UTILISER LORSQUE
-    # LE DIFFÉRENTIEL N'EST PAS RELIÉ AUX ROUES !!
-    # METTRE UN RÉDUCTEUR DE COUPLE ÉLECTRONIQUE (TC ?)
-    def launch_control(self) :
-        print(f"LAUNCH CONTROL ! Vitesse : {100}")
-        while True :
-            self.moteur.throttle = 1.0
-            time.sleep(0.1)
 
 # Création d'une instance du moteur
 unMoteur = Moteur()
@@ -95,10 +86,10 @@ if __name__ == '__main__':
             unMoteur.stop()
         elif(gear == 1) : # Pour avancer
             speed = 30
-            unMoteur.avancer(speed)
+            unMoteur.progress_start(speed,1)
         elif(gear == 2) : # Pour reculer
             speed = 30
-            unMoteur.reculer(speed)
+            unMoteur.progress_start(speed,-1)
         else : # Si l'utilisateur ne saisit pas une bonne entrée
             print("0 pour NEUTRE")
             print("1 pour AVANCER")
