@@ -6,21 +6,22 @@ import time
 
 class BandeLed(threading.Thread):
     def __init__(self):
-        count = 14
-        bus = 0
-        device = 0
+        self.bus = 0
+        self.device = 0
+
+        self.LEDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 
         self.set_led_type('GRB')
-        self.set_led_count(count)
-        self.set_led_brightness(0)
-        self.led_begin(bus, device)
+        self.set_led_count(len(self.LEDS))
+        self.spi = spidev.SpiDev()
+        self.set_all_led_brightness(0)
+        self.led_begin(self.bus, self.device)
         self.lightMode = 'none'
         self.colorBreathR = 0
         self.colorBreathG = 0
         self.colorBreathB = 0
         self.breathSteps = 10
-        #self.spi_gpio_info()
-        self.set_all_led_color(0,0,0)
+        self.set_all_led_rgb([0,0,0])
         self.__flag = threading.Event()
         self.__flag.clear()
 
@@ -46,23 +47,7 @@ class BandeLed(threading.Thread):
             
     def check_spi_state(self):
         return self.led_init_state
-        
-    def spi_gpio_info(self):
-        if self.bus == 0:
-            print("SPI0-MOSI: GPIO10(WS2812-PIN)  SPI0-MISO: GPIO9  SPI0-SCLK: GPIO11  SPI0-CE0: GPIO8  SPI0-CE1: GPIO7")
-        elif self.bus == 1:
-            print("SPI1-MOSI: GPIO20(WS2812-PIN)   SPI1-MISO: GPIO19  SPI1-SCLK: GPIO21  SPI1-CE0: GPIO18  SPI1-CE1: GPIO17  SPI0-CE1: GPIO16")
-        elif self.bus == 2:
-            print("SPI2-MOSI: GPIO41(WS2812-PIN)   SPI2-MISO: GPIO40  SPI2-SCLK: GPIO42  SPI2-CE0: GPIO43  SPI2-CE1: GPIO44  SPI2-CE1: GPIO45")
-        elif self.bus == 3:
-            print("SPI3-MOSI: GPIO2(WS2812-PIN)  SPI3-MISO: GPIO1  SPI3-SCLK: GPIO3  SPI3-CE0: GPIO0  SPI3-CE1: GPIO24")
-        elif self.bus == 4:
-            print("SPI4-MOSI: GPIO6(WS2812-PIN)  SPI4-MISO: GPIO5  SPI4-SCLK: GPIO7  SPI4-CE0: GPIO4  SPI4-CE1: GPIO25")
-        elif self.bus == 5:
-            print("SPI5-MOSI: GPIO14(WS2812-PIN)  SPI5-MISO: GPIO13  SPI5-SCLK: GPIO15  SPI5-CE0: GPIO12  SPI5-CE1: GPIO26")
-        elif self.bus == 6:
-            print("SPI6-MOSI: GPIO20(WS2812-PIN)  SPI6-MISO: GPIO19  SPI6-SCLK: GPIO21  SPI6-CE0: GPIO18  SPI6-CE1: GPIO27")
-    
+            
     def led_close(self):
         self.set_all_led_rgb([0,0,0])
         self.spi.close()
@@ -88,11 +73,15 @@ class BandeLed(threading.Thread):
             self.led_blue_offset = 2
             return -1
     
-    def set_led_brightness(self, brightness):
+    def set_all_led_brightness(self, brightness):
         self.led_brightness = brightness
 
         for i in range(self.led_count):
             self.set_led_rgb_data(i, self.led_original_color)
+
+    def set_led_brightness(self, led_num, brightness):
+        self.led_brightness = brightness
+        self.set_led_rgb_data(led_num, self.led_original_color)
             
     def set_ledpixel(self, index, r, g, b):
         p = [0,0,0]
@@ -104,35 +93,18 @@ class BandeLed(threading.Thread):
         self.led_original_color[index*3+self.led_blue_offset] = b
 
         for i in range(3):
-            self.led_color[index*3+i] = p[i]
-
-    def set_led_color_data(self, index, r, g, b):
-        self.set_ledpixel(index, r, g, b)  
+            self.led_color[index*3+i] = p[i] 
         
     def set_led_rgb_data(self, index, color):
-        self.set_ledpixel(index, color[0], color[1], color[2])   
-        
-    def set_led_color(self, index, r, g, b):
-        self.set_ledpixel(index, r, g, b)
-        self.show()
+        self.set_ledpixel(index, color[0], color[1], color[2])
         
     def set_led_rgb(self, index, color):
         self.set_led_rgb_data(index, color)   
-        self.show() 
-    
-    def set_all_led_color_data(self, r, g, b):
-        for i in range(self.led_count):
-            self.set_led_color_data(i, r, g, b)
+        self.show()
             
     def set_all_led_rgb_data(self, color):
         for i in range(self.led_count):
             self.set_led_rgb_data(i, color)   
-        
-    def set_all_led_color(self, r, g, b):
-        for i in range(self.led_count):
-            self.set_led_color_data(i, r, g, b)
-
-        self.show()
         
     def set_all_led_rgb(self, color):
         for i in range(self.led_count):
@@ -172,21 +144,20 @@ class BandeLed(threading.Thread):
         else:
             write_ws2812 = self.write_ws2812_numpy4
         write_ws2812()
-    
+
     def police(self):
         self.lightMode = 'police'
         self.resume()
-        
+
     def breath(self, R_input, G_input, B_input):
         self.lightMode = 'breath'
         self.colorBreathR = R_input
         self.colorBreathG = G_input
         self.colorBreathB = B_input
-        self.resume()    
+        self.resume()
             
     def resume(self):
         self.__flag.set()
-
 
     def breathProcessing(self):
         while self.lightMode == 'breath':
@@ -194,7 +165,7 @@ class BandeLed(threading.Thread):
                 if self.lightMode != 'breath':
                     break
 
-                self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
+                self.set_all_led_rgb([self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps])
                 #self.show()
                 time.sleep(0.03)
 
@@ -202,17 +173,17 @@ class BandeLed(threading.Thread):
                 if self.lightMode != 'breath':
                     break
 
-                self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
+                self.set_all_led_rgb([self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps)])
                 #self.show()
                 time.sleep(0.03)
                 
     def policeProcessing(self):
         while self.lightMode == 'police':
             for i in range(0,3):
-                self.set_all_led_color_data(0,0,255)
+                self.set_all_led_rgb_data([0,0,255])
                 self.show()
                 time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
+                self.set_all_led_rgb_data([0,0,0])
                 self.show()
                 time.sleep(0.05)
 
@@ -222,10 +193,10 @@ class BandeLed(threading.Thread):
             time.sleep(0.1)
 
             for i in range(0,3):
-                self.set_all_led_color_data(255,0,0)
+                self.set_all_led_rgb_data([255,0,0])
                 self.show()
                 time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
+                self.set_all_led_rgb_data([0,0,0])
                 self.show()
                 time.sleep(0.05)
             time.sleep(0.1)
@@ -240,7 +211,7 @@ class BandeLed(threading.Thread):
         
     def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
-        self.set_led_color(led_num, colour[0], colour[1], colour[2])
+        self.set_led_rgb(led_num, colour)
         self.show()
         
     def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
@@ -260,17 +231,17 @@ class BandeLed(threading.Thread):
         self.show()
         
     def set_bottomLeft_leds(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [5, 6, 7]
+        BOTTOM_LEFT_LED = [5, 6, 7]
         
-        for led_num in FRONT_LED:
+        for led_num in BOTTOM_LEFT_LED:
             self.set_led(led_num, colour, brightness)
             
         self.show()
         
     def set_bottomRight_leds(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [2, 3, 4]
+        BOTTOM_RIGHT_LED = [2, 3, 4]
         
-        for led_num in FRONT_LED:
+        for led_num in BOTTOM_RIGHT_LED:
             self.set_led(led_num, colour, brightness)
             
         self.show()
@@ -286,8 +257,11 @@ if __name__ == '__main__':
 
     try:
         if led.check_spi_state() != 0:
-            led.set_back_leds([255, 0, 255],255)
-            time.sleep(7000)
+            led.set_back_leds([255, 0, 0],255)
+            time.sleep(1)
+
+            led.set_back_leds([0, 0, 255], 255)
+            time.sleep(1)
         else:
             led.led_close()
             
