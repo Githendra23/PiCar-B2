@@ -257,14 +257,16 @@ if __name__ == '__main__':
     led = BandeLed()
 
     try:
-        if led.check_spi_state() != 0:
-            led.set_back_leds([255, 0, 0],255)
-            time.sleep(1)
+        while True:
+            if led.check_spi_state() != 0:
+                led.set_back_leds([255, 0, 0], 255)
+                time.sleep(1)
 
-            led.set_back_leds([0, 0, 255], 255)
-            time.sleep(1)
-        else:
-            led.led_close()
+                led.set_back_leds([0, 0, 255], 255)
+                time.sleep(1)
+            else:
+                led.led_close()
+                break
             
     except KeyboardInterrupt:
         led.led_close()
