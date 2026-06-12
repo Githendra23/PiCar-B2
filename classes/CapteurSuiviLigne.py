@@ -27,6 +27,11 @@ class CapteurSuiviLigne:
             self.statut_droite()
         )
 
+    def printState(self) :
+        print(f"Capteur gauche : {self.statut_gauche()}")
+        print(f"Capteur central : {self.statut_milieu()}")
+        print(f"Capteur droit : {self.statut_droite()}")
+    
 if __name__ == '__main__':
     try:
         capteur_ligne = CapteurSuiviLigne()
