@@ -21,7 +21,7 @@ pwn_A = 0
 pwm_B = 0
 
 def map(x,in_min,in_max,out_min,out_max):
-  return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
+  return (x - in_min)/(in_max - in_min) *(out_max - out_min) + out_min
 
 
 #def setup():
@@ -58,20 +58,14 @@ class Moteur:
     def avancer(self, vitesse):
         vitesse = check_speed(vitesse)
         print(f"Le moteur avance ! Vitesse : {vitesse}")
-        
-        while True :
-            self.moteur.throttle = map(vitesse, 0, 100, 0, 1.0)
-            time.sleep(0.1)
+        self.moteur.throttle = map(vitesse, 0, 100, 0, 1.0)
 
     # Pour reculer
     def reculer(self, vitesse):
-        vitesse = check_speed(vitesse)
-        print(f"Le moteur recule ! Vitesse : {vitesse}")
-
-        while True :
-            self.moteur.throttle = -map(vitesse, 0, 100, 0, 1.0)
-            time.sleep(0.1)
-
+      vitesse = check_speed(vitesse)
+      print(f"Le moteur recule ! Vitesse : {vitesse}")
+      self.moteur.throttle = -map(vitesse, 0, 100, 0, 1.0)
+ 
     # Arrêter le moteur
     def stop(self):
         print("Le moteur est à l'arrêt !")
