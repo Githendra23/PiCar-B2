@@ -15,6 +15,8 @@ class Tourelle:
 
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_PAN, angle)
+        else:
+            ValueError("Tourelle fonction pan - Hors de portée")
 
     def tilt(self, angle):
         ANGLE_MAX = 180
@@ -22,6 +24,8 @@ class Tourelle:
 
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_TILT, angle)
+        else:
+            ValueError("Tourelle fonction tilt - Hors de portée")
 
     def reset(self):
         self.controller.set_angle(self.CHANNEL_PAN, 97)
