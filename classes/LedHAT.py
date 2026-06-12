@@ -19,4 +19,6 @@ class LedHAT:
 
 if __name__ == "__main__":
     led = LedHAT()
-    led.on([1, 0, 1])
+
+    while True:
+        led.apply([1, 1, 1])
