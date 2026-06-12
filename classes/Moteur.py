@@ -96,10 +96,6 @@ if __name__ == '__main__':
             speed = 30
             unMoteur.avancer(speed)
             time.sleep(2)
-            
-            i = 0
-            for i in range (20) :
-                unMoteur.TC(speed)
 
         elif(gear == 2) : # Pour reculer
             speed = 30
