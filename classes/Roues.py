@@ -14,6 +14,8 @@ class Roues:
     def turn(self, angle):
         if (angle >= self.ANGLE_MIN and angle <= self.ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL, angle)
+        else:
+            ValueError("Roues fonction turn - Angle hors de portée")
 
     def getAngleMin(self):
         return self.ANGLE_MIN
