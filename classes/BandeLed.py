@@ -211,11 +211,12 @@ class BandeLed(threading.Thread):
         
     def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
+
         self.set_led_rgb(led_num, colour)
         self.show()
         
     def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
-        BACK_LED = [8, 9, 10, 11, 12, 13]
+        BACK_LED = self.LEDS[8 : 14]
         
         for led_num in BACK_LED:
             self.set_led(led_num, colour, brightness)
@@ -223,7 +224,7 @@ class BandeLed(threading.Thread):
         self.show()
         
     def set_front_leds(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [0, 1]
+        FRONT_LED = self.LEDS[0 : 2]
         
         for led_num in FRONT_LED:
             self.set_led(led_num, colour, brightness)
@@ -231,7 +232,7 @@ class BandeLed(threading.Thread):
         self.show()
         
     def set_bottomLeft_leds(self, colour = [255, 255, 255], brightness = 255):
-        BOTTOM_LEFT_LED = [5, 6, 7]
+        BOTTOM_LEFT_LED = self.LEDS[5 : 8]
         
         for led_num in BOTTOM_LEFT_LED:
             self.set_led(led_num, colour, brightness)
@@ -239,7 +240,7 @@ class BandeLed(threading.Thread):
         self.show()
         
     def set_bottomRight_leds(self, colour = [255, 255, 255], brightness = 255):
-        BOTTOM_RIGHT_LED = [2, 3, 4]
+        BOTTOM_RIGHT_LED = self.LEDS[2 : 5]
         
         for led_num in BOTTOM_RIGHT_LED:
             self.set_led(led_num, colour, brightness)
