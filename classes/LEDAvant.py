@@ -24,15 +24,25 @@ class LEDAvant():
         self.R_G = PWM(pin=Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=Right_B, initial_value=1.0, frequency=2000)
 
-    def ledR(self, colour = [1, 1, 1]):
+    def right_on(self, colour = [1, 1, 1]):
         self.R_R.value = colour[0]
         self.R_G.value = colour[1]
         self.R_B.value = colour[2]
 
-    def ledG(self, colour = [1, 1, 1]):
+    def left_on(self, colour = [1, 1, 1]):
         self.L_R.value = colour[0]
         self.L_G.value = colour[1]
         self.L_B.value = colour[2]
+
+    def right_off(self):
+        self.R_R.value = 0
+        self.R_G.value = 0
+        self.R_B.value = 0
+
+    def left_off(self):
+        self.L_R.value = 0
+        self.L_G.value = 0
+        self.L_B.value = 0
 
     def switch(self, commande):
         match commande:
