@@ -9,20 +9,17 @@ import sys
 # motor_EN_A: Pin7  |  motor_EN_B: Pin11
 # motor_A:  Pin8,Pin10    |  motor_B: Pin13,Pin12
 
+VMIN = 0
 VMAX = 100
 
 MOTOR_M1_IN1 =  15      #Define the positive pole of M1
 MOTOR_M1_IN2 =  14      #Define the negative pole of M1
-
-Dir_forward   = 0
-Dir_backward  = 1
 
 pwn_A = 0
 pwm_B = 0
 
 def map(x,in_min,in_max,out_min,out_max):
   return (x - in_min)/(in_max - in_min) *(out_max - out_min) +out_min
-
 
 #def setup():
 i2c = busio.I2C(SCL, SDA)
@@ -31,47 +28,42 @@ i2c = busio.I2C(SCL, SDA)
 pwm_motor = PCA9685(i2c, address=0x5f) #default 0x40
 pwm_motor.frequency = 50
 
-motor1 = motor.DCMotor(pwm_motor.channels[MOTOR_M1_IN1],pwm_motor.channels[MOTOR_M1_IN2] )
-motor1.decay_mode = (motor.SLOW_DECAY)
-
+# Pour bien garder la vitesse entre 0 et 100
 def check_speed(vitesse) :
-    if(vitesse > 100) :
-        vitesse = 100
-    elif(vitesse < 0) :
-        vitesse = 0
+    if(vitesse > VMAX) :
+        vitesse = VMAX
+    elif(vitesse < VMIN) :
+        vitesse = VMIN
     return vitesse
 
-
-def progress_start(speed) :
-    speed = check_speed(speed)
-    for i in range(speed) :
-        m1.moteur.throttle = map(i,0,100,0,1.0)
-        time.sleep(0.05)
-
-
 class Moteur:
-
-    def __init__(self, moteur):
-        self.moteur = moteur
-
+    def __init__(self):
+        self.moteur = motor.DCMotor(pwm_motor.channels[MOTOR_M1_IN1],pwm_motor.channels[MOTOR_M1_IN2] )
+        self.moteur.decay_mode = (motor.SLOW_DECAY)
+    
     # Pour avancer
     def avancer(self, vitesse):
         vitesse = check_speed(vitesse)
         print(f"Le moteur avance ! Vitesse : {vitesse}")
-        
-        while True :
-            self.moteur.throttle = map(vitesse, 0, 100, 0, 1.0)
-            time.sleep(0.1)
+        self.moteur.throttle = map(vitesse, 0, 100, 0, 1.0)
 
     # Pour reculer
     def reculer(self, vitesse):
         vitesse = check_speed(vitesse)
         print(f"Le moteur recule ! Vitesse : {vitesse}")
+        self.moteur.throttle = -map(vitesse, 0, 100, 0, 1.0)
 
-        while True :
-            self.moteur.throttle = -map(vitesse, 0, 100, 0, 1.0)
-            time.sleep(0.1)
-
+    # Pour un démarrage progressif afin de ne pas abîmer le différentiel
+    def progress_start(self, speed, direction) :
+        speed = check_speed(speed)
+        for i in range(speed) :
+            if(direction < 0) :
+              direction = -1
+            else :
+              direction = 1
+            unMoteur.moteur.throttle = direction*map(i,0,100,0,1.0)
+            time.sleep(0.05)
+  
     # Arrêter le moteur
     def stop(self):
         print("Le moteur est à l'arrêt !")
@@ -83,28 +75,22 @@ class Moteur:
         self.stop()
         pwm_motor.deinit()
 
-    # INUTILE, ABÎME LA MÉCANIQUE SUR LE LONG TERME => A UTILISER LORSQUE
-    # LE DIFFÉRENTIEL N'EST PAS RELIÉ AUX ROUES !!
-    # METTRE UN RÉDUCTEUR DE COUPLE ÉLECTRONIQUE (TC ?)
-    def launch_control(self) :
-        print(f"LAUNCH CONTROL ! Vitesse : {100}")
-        while True :
-            self.moteur.throttle = 1.0
-            time.sleep(0.1)
+# Création d'une instance du moteur
+unMoteur = Moteur()
 
-m1 = Moteur(motor1)
-
+# Pour faire un test
 if __name__ == '__main__':
     try:
         gear = int(sys.argv[1])
         if(gear == 0) : # Pour arrêter le moteur
-            m1.stop()
+            unMoteur.stop()
         elif(gear == 1) : # Pour avancer
-            speed = 100
-            m1.avancer(30)
+            speed = 30
+            unMoteur.progress_start(speed,1)
         elif(gear == 2) : # Pour reculer
-            m1.reculer(30)
-        else :
+            speed = 30
+            unMoteur.progress_start(speed,-1)
+        else : # Si l'utilisateur ne saisit pas une bonne entrée
             print("0 pour NEUTRE")
             print("1 pour AVANCER")
             print("2 pour RECULER")
@@ -112,4 +98,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Programme interrompu.")
     finally :
-        m1.destroy()
+        unMoteur.destroy()
