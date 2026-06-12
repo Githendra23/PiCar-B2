@@ -1,20 +1,22 @@
 import ServoController
 
+import time
+
 class Direction:
-    def __init__(self, controller: ServoController):
+    def __init__(self):
+        self.servo = ServoController.ServoController()
         self.CHANNEL = 0
 
         self.ANGLE_MIN = 0
-        self.ANGLE_MAX = 130
+        self.ANGLE_MAX = 140
         self.ANGLE_CENTER = 90
 
-        self.controller = controller
-        self.controller.add_servo(self.CHANNEL)
+        self.servo.add_servo(self.CHANNEL)
         self.reset()
 
     def turn(self, angle):
         if (angle >= self.ANGLE_MIN and angle <= self.ANGLE_MAX):
-            self.controller.set_angle(self.CHANNEL, angle)
+            self.servo.set_angle(self.CHANNEL, angle)        
 
     def getAngleMin(self):
         return self.ANGLE_MIN
@@ -26,4 +28,16 @@ class Direction:
         return self.ANGLE_CENTER
 
     def reset(self):
-        self.controller.set_angle(self.CHANNEL, self.ANGLE_CENTER)
+        self.servo.set_angle(self.CHANNEL, self.ANGLE_CENTER)
+
+
+if __name__ == "__main__" :
+    direction = Direction()
+    try :
+        while True :
+            angle = int(input("Entrez un angle : "))
+            direction.turn(angle)
+            time.sleep(0.5)
+    except KeyboardInterrupt :
+        print("Fin du programme.")
+        direction.reset()
