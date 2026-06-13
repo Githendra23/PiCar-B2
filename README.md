@@ -1,10 +1,14 @@
-# Branche moteur
-Cette branche sert à implémenter la classe Moteur en Python.
-Fonctionnalités disponibles :
-- avancer
-- reculer
-- stopper
-- démarrage progressif
+# Branche suivi_ligne_v3
+Cette branche sert à implémenter le suivi de ligne en Python.
+Le robot doit être capable de :
+- prendre une ligne droite
+- corriger sa trajectoire
+- prendre un virage
+- prendre un virage en angle droit
+- prendre une intersection
+- adapter son comportement s'il passe sur une ligne discontinue
+- reculer s'il détecte une zone blanche sans ligne noire devant
+
 
 ## Resources Links
 
