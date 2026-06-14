@@ -22,6 +22,7 @@ class BandeLed(threading.Thread):
         self.colorBreathB = 0
         self.breathSteps = 10
         self.set_all_led_rgb([0,0,0])
+        super().__init__()
         self.__flag = threading.Event()
         self.__flag.clear()
 
@@ -97,10 +98,6 @@ class BandeLed(threading.Thread):
         
     def set_led_rgb_data(self, index, color):
         self.set_ledpixel(index, color[0], color[1], color[2])
-        
-    def set_led_rgb(self, index, color):
-        self.set_led_rgb_data(index, color)   
-        self.show()
             
     def set_all_led_rgb_data(self, color):
         for i in range(self.led_count):
@@ -210,41 +207,52 @@ class BandeLed(threading.Thread):
             self.breathProcessing()
         
     def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
+        if led_num not in self.LEDS:
+            raise ValueError(f"LED {led_num} inexistante. LED valides : {self.LEDS}")
+
         self.led_brightness = brightness
 
-        self.set_led_rgb(led_num, colour)
+        self.set_led_rgb_data(led_num, colour)
         self.show()
         
     def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
         BACK_LED = self.LEDS[8 : 14]
+
+        self.led_brightness = brightness
         
         for led_num in BACK_LED:
-            self.set_led(led_num, colour, brightness)
-            
+            self.set_led_rgb_data(led_num, colour)
+
         self.show()
         
     def set_front_leds(self, colour = [255, 255, 255], brightness = 255):
         FRONT_LED = self.LEDS[0 : 2]
+
+        self.led_brightness = brightness
         
         for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
-            
+            self.set_led_rgb_data(led_num, colour)
+
         self.show()
         
     def set_bottomLeft_leds(self, colour = [255, 255, 255], brightness = 255):
         BOTTOM_LEFT_LED = self.LEDS[5 : 8]
+
+        self.led_brightness = brightness
         
         for led_num in BOTTOM_LEFT_LED:
-            self.set_led(led_num, colour, brightness)
-            
+            self.set_led_rgb_data(led_num, colour)
+
         self.show()
         
     def set_bottomRight_leds(self, colour = [255, 255, 255], brightness = 255):
         BOTTOM_RIGHT_LED = self.LEDS[2 : 5]
+
+        self.led_brightness = brightness
         
         for led_num in BOTTOM_RIGHT_LED:
-            self.set_led(led_num, colour, brightness)
-            
+            self.set_led_rgb_data(led_num, colour)
+
         self.show()
         
 if __name__ == '__main__':
@@ -257,16 +265,23 @@ if __name__ == '__main__':
     led = BandeLed()
 
     try:
-        while True:
-            if led.check_spi_state() != 0:
-                led.set_back_leds([255, 0, 0], 255)
-                time.sleep(1)
+        if led.check_spi_state() != 0:
+            led.set_back_leds([255, 0, 0], 255)
+            time.sleep(1)
+            led.set_back_leds([0, 0, 255], 255)
+            time.sleep(1)
 
-                led.set_back_leds([0, 0, 255], 255)
-                time.sleep(1)
-            else:
-                led.led_close()
-                break
-            
+            led.set_all_led_rgb([0, 0, 0])
+            time.sleep(1)
+
+            led.set_led(0, [255, 0, 0], 255)
+            time.sleep(1)
+            led.set_led(5, [0, 255, 0], 128)
+            time.sleep(1)
+
+            led.led_close()
+        else:
+            led.led_close()
+
     except KeyboardInterrupt:
         led.led_close()
