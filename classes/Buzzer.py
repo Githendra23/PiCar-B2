@@ -2,7 +2,7 @@
 from gpiozero import TonalBuzzer
 from time import sleep
 
-import Musics
+import musics
 
 
 # Initialize a TonalBuzzer connected to GPIO18 (BCM)
