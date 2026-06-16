@@ -9,7 +9,7 @@ import Musics
 class Buzzer:
     def __init__(self): 
         self.GPIOpin = 18
-        self.tb = TonalBuzzer(self.GPIOpin)
+        self.tonalbuzzer = TonalBuzzer(self.GPIOpin)
 
     def play(self, tune):
         """
@@ -18,16 +18,16 @@ class Buzzer:
         where each tuple represents a note and its duration.
         """
         for note, duration in tune:
-            self.tb.play(note)  # Play the note on the buzzer
+            self.tonalbuzzer.play(note)  # Play the note on the buzzer
             sleep(float(duration))  # Delay for the duration of the note
-            self.tb.stop()  # Stop playing after the tune is complete
+            self.tonalbuzzer.stop()  # Stop playing after the tune is complete
 
     def bip(self) :
         note = "D4"
         duration = 0.5
-        self.tb.play(note)  # Play the note on the buzzer
+        self.tonalbuzzer.play(note)  # Play the note on the buzzer
         sleep(float(duration))  # Delay for the duration of the note
-        self.tb.stop()  # Stop playing after the tune is complete
+        self.tonalbuzzer.stop()  # Stop playing after the tune is complete
         sleep(float(duration))
     
 if __name__ == "__main__":    
@@ -37,4 +37,4 @@ if __name__ == "__main__":
         
     except KeyboardInterrupt:
         # Handle KeyboardInterrupt for graceful termination
-        pass
+        print("Fin du programme via le clavier.")
