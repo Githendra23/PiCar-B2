@@ -4,7 +4,7 @@ import numpy
 from numpy import sin, cos, pi
 import time
 
-class BandeLed(threading.Thread):
+class BandeLED(threading.Thread):
     def __init__(self):
         self.bus = 0
         self.device = 0
@@ -254,7 +254,7 @@ if __name__ == '__main__':
     print("spidev device as show:")
     os.system("ls /dev/spi*")
 
-    led = BandeLed()
+    led = BandeLED()
 
     try:
         while True:
