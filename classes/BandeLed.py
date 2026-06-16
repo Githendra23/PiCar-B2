@@ -2,8 +2,7 @@ import spidev
 import numpy
 import time
 
-
-class BandeLed:
+class BandeLED(threading.Thread):
     def __init__(self):
         self.bus = 0
         self.device = 0
@@ -153,7 +152,7 @@ if __name__ == '__main__':
     print("spidev device as show:")
     os.system("ls /dev/spi*")
 
-    led = BandeLed()
+    led = BandeLED()
 
     try:
         if led.check_spi_state() != 0:
