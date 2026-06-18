@@ -7,11 +7,11 @@ ANGLE_MIN = 0
 
 
 class Tourelle:
-    def __init__(self, controller : ServoController):
+    def __init__(self):
         self.CHANNEL_X_AXIS = 1 # horizontal
         self.CHANNEL_Y_AXIS = 2 # vertical
         
-        self.controller = controller
+        self.controller = ServoController.ServoController()
         self.controller.add_servo(self.CHANNEL_X_AXIS)
         self.controller.add_servo(self.CHANNEL_Y_AXIS)
         
@@ -51,8 +51,7 @@ class Tourelle:
 
 
 if __name__ == "__main__" :
-    servo = ServoController.ServoController()
-    tourelle = Tourelle(servo)
+    tourelle = Tourelle()
 
     try :
         while True :
