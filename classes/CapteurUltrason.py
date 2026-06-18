@@ -1,7 +1,7 @@
 from gpiozero import DistanceSensor
 from time import sleep
 
-class CapteurMesureUltrason:
+class CapteurUltrason:
     _broche_echo = 24
     _broche_declencheur = 23
 
@@ -17,9 +17,17 @@ class CapteurMesureUltrason:
     def distance(self):
         return self._capteur.distance * 1000.0  # Unité : mm
 
+    def afficher_distance(self) :
+        print(f"Distance : {self.distance()}")
+
+    def alert(limite) :
+        if(self.distance() <= limite) :
+            print("Obstacle détecté !!!")
+
+
 if __name__ == "__main__":
-    capteur_ultrason = CapteurMesureUltrason()
+    capteur_ultrason = CapteurUltrason()
 
     while True:
         print("%.0f mm" % capteur_ultrason.distance())
-        sleep(0.05)
+        sleep(0.01)
