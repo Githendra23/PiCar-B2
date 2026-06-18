@@ -20,12 +20,17 @@ class CapteurSuiviLigne:
     def statut_droite(self):
         return self._capteur_droite.value
 
-    def statut(self):
+    def getState(self):
         return (
             self.statut_gauche(),
             self.statut_milieu(),
             self.statut_droite()
         )
+    
+    def printState(self) :
+        print(self.statut_gauche())
+        print(self.statut_milieu())
+        print(self.statut_droite())
 
 if __name__ == '__main__':
     try:
