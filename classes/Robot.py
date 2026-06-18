@@ -20,8 +20,11 @@ class Robot :
     def reverse(self, speed) :
         self.moteur.reverse(speed)
 
-    def stop(self) :
+    def stopEngine(self) :
         self.moteur.stop()
+
+    def resetTourelle(self) :
+        self.tourelle.reset()
 
     def turnTourelleXAxis(self, angle) :
         self.tourelle.turn_x_axis(angle)
@@ -30,7 +33,10 @@ class Robot :
         self.tourelle.turn_y_axis(angle)
 
 if __name__ == "__main__" :
+    robot = Robot()
     try :
         pass
     except KeyboardInterrupt :
-        pass
+        print("Interruption du programme via le clavier.")
+        robot.resetTourelle()
+        robot.stopEngine()
