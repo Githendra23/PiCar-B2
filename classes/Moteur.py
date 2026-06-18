@@ -43,30 +43,45 @@ class Moteur:
     
     # Pour avancer
     def drive(self, speed):
-        self.current_speed = speed
         speed = check_speed(speed)
         print(f"Le moteur avance ! Vitesse : {speed}")
-        # self.moteur.throttle = map(speed, 0, 100, 0, 1.0)
-        self.progress_start(speed,1)
+
+        diff = abs(self.current_speed - speed)
+        if(diff >= 30) :
+            print("Progressif")
+            self.progress_start(speed,1)
+        else :
+            self.moteur.throttle = map(speed, 0, 100, 0, 1.0)
+        self.current_speed = speed
+
 
     # Pour reculer
     def reverse(self, speed):
-        self.current_speed = speed
         speed = check_speed(speed)
-        print(f"Le moteur recule ! Vitesse : {speed}")
-        # self.moteur.throttle = -map(speed, 0, 100, 0, 1.0)
-        self.progress_start(speed,-1)
+        print(f"Le moteur avance ! Vitesse : {speed}")
+
+        diff = abs(self.current_speed - speed)
+        if(diff >= 30) :
+            print("Progressif")
+            self.progress_start(speed,-1)
+        else :
+            self.moteur.throttle = -map(speed, 0, 100, 0, 1.0)
+        self.current_speed = speed
 
     # Pour un démarrage progressif afin de ne pas abîmer la transmission
     def progress_start(self, speed, direction) :
         acceleration_delay = 0.05
         speed = check_speed(speed)
+        
         for i in range(speed) :
             if(direction < 0) :
               direction = -1
             else :
               direction = 1
+
+            
             self.moteur.throttle = direction*map(i,0,100,0,1.0)
+            self.current_speed = i
             time.sleep(acceleration_delay)
   
     # Arrêter le moteur
@@ -99,13 +114,16 @@ if __name__ == '__main__':
 
         elif(gear == 1) : # Pour avancer
             speed = 100
-            unMoteur.drive(speed)
-            time.sleep(2)
+            print(f"Current : {unMoteur.current_speed}")
+            while True :
+                unMoteur.drive(speed)
+            time.sleep(0.1)
 
         elif(gear == 2) : # Pour reculer
             speed = 30
-            unMoteur.reverse(speed)
-            time.sleep(2)
+            while True :
+                unMoteur.reverse(speed)
+            # time.sleep(2)
             
         else : # Si l'utilisateur ne saisit pas une bonne entrée
             print("0 pour NEUTRE")
