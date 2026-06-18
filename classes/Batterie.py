@@ -36,11 +36,14 @@ class Batterie :
 
 if __name__ == "__main__" :
     batterie = Batterie()
-    while True:
-        pcnt = batterie.getPercentage()
-        print(f"Current battery level: {pcnt:.2f} %")
+    try :
+        while True:
+            pcnt = batterie.getPercentage()
+            print(f"Current battery level: {pcnt:.2f} %")
 
-        # Battery level warning judgment
-        if pcnt < 20:
-            print("Batterie faible ! Branchez l'alimentation.")
-        time.sleep(0.5)
+            # Battery level warning judgment
+            if pcnt < 20:
+                print("Batterie faible ! Branchez l'alimentation.")
+            time.sleep(0.5)
+    except KeyboardInterrupt :
+        print("Interruption via le clavier.")
