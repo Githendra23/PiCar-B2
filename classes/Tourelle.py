@@ -5,6 +5,10 @@ import ServoController
 ANGLE_MAX = 180
 ANGLE_MIN = 0
 
+############################
+# AJOUTER LA LOGIQUE DU CAPTEUR ULTRASON
+# AJOUTER LES TRUCS POUR LA CAMÉRA
+############################
 
 class Tourelle:
     def __init__(self):
@@ -14,6 +18,7 @@ class Tourelle:
         self.controller = ServoController.ServoController()
         self.controller.add_servo(self.CHANNEL_X_AXIS)
         self.controller.add_servo(self.CHANNEL_Y_AXIS)
+
         
     def turn_x_axis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
@@ -28,6 +33,13 @@ class Tourelle:
         else:
             ValueError("Tourelle rotation Y - Angle hors de portée")
 
+
+    def analyse(self) :
+        matrice = [180]
+        while True :
+            for i in range (0,180,2) :
+                self.turn_x_axis(i)
+                time.sleep(0.1)
 
     def print_angle(self) :
         print(f"Angle X : ")
