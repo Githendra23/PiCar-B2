@@ -1,5 +1,6 @@
 import time
 
+import CapteurUltrason
 import ServoController
 
 ANGLE_MAX = 180
@@ -18,8 +19,9 @@ class Tourelle:
         self.controller = ServoController.ServoController()
         self.controller.add_servo(self.CHANNEL_X_AXIS)
         self.controller.add_servo(self.CHANNEL_Y_AXIS)
-
         
+        self.capteurUltrason = CapteurUltrason.CapteurUltrason()
+
     def turn_x_axis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
@@ -34,12 +36,24 @@ class Tourelle:
             ValueError("Tourelle rotation Y - Angle hors de portée")
 
 
-    def analyse(self) :
-        matrice = [180]
-        while True :
-            for i in range (0,180,2) :
-                self.turn_x_axis(i)
-                time.sleep(0.1)
+    def analyse(self, distance_alerte) :
+        matrice = []
+        self.reset()
+
+        for i in range (0,180,1) :
+            self.turn_x_axis(i)
+            matrice.append(self.capteurUltrason.distance())
+            time.sleep(0.01)
+        
+        for i in range(0,180,1) :
+            if(matrice[i] <= distance_alerte) :
+                print(f"Angle {i}° : obstacle")
+            else :
+                # print(f"Angle {i}° : libre")
+                continue
+        
+        matrice.clear()
+        
 
     def print_angle(self) :
         print(f"Angle X : ")
@@ -51,12 +65,6 @@ class Tourelle:
     def getAngleMin(self):
         return self.ANGLE_MIN
 
-    def getCenterPan(self):
-        return self.CENTER_PAN
-
-    def getCenterTilt(self):
-        return self.CENTER_TILT
-
     def reset(self):
         self.turn_x_axis(90)
         self.turn_y_axis(90)
@@ -66,15 +74,18 @@ if __name__ == "__main__" :
     tourelle = Tourelle()
 
     try :
-        while True :
-            x_angle = int(input("Entrez l'angle sur l'axe X : "))
-            y_angle = int(input("Entrez l'angle sur l'axe Y : "))
+        # x_angle = int(input("Entrez l'angle sur l'axe X : "))
+        # y_angle = int(input("Entrez l'angle sur l'axe Y : "))
 
-            tourelle.turn_x_axis(x_angle)
-            tourelle.turn_y_axis(y_angle)
-            # tourelle.print_angle()
-            time.sleep(2)
-            tourelle.reset()
+        # tourelle.turn_x_axis(x_angle)
+        # tourelle.turn_y_axis(y_angle)
+        # # tourelle.print_angle()
+
+        tourelle.analyse(250)
+        time.sleep(2)
+        
+        tourelle.reset()
+        time.sleep(1)
             
     except KeyboardInterrupt :
         print("Fin du programme.")
