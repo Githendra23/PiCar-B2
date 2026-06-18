@@ -3,6 +3,7 @@ import time
 import Buzzer
 import CapteurSuiviLigne
 import Direction
+import LEDAvant
 import Moteur
 import Tourelle
 
@@ -12,6 +13,7 @@ class Robot :
         self.buzzer = Buzzer.Buzzer()
         self.capteurSuiviLigne = CapteurSuiviLigne.CapteurSuiviLigne()
         self.direction = Direction.Direction()
+        self.ledAvant = LEDAvant.LEDAvant()
         self.moteur = Moteur.Moteur()
         self.tourelle = Tourelle.Tourelle()
 
@@ -36,25 +38,15 @@ class Robot :
     
     def turnTourelleYAxis(self, angle) :
         self.tourelle.turn_y_axis(angle)
-
-if __name__ == "__main__" :
-    
-    try :
-        pass
-    except KeyboardInterrupt :
-        print("Interruption du programme via le clavier.")
         
 
-if __name__ == '__main__':
-    MOST_LEFT = 130
-    MID_LEFT = 110
-    MID_RIGHT = 70
-    MOST_RIGHT = 50
-    robot = Robot()
-    
-    try:
+    def suiviLigne(self) :
         speed = 35
         reverse_speed = 15
+        MOST_LEFT = 130
+        MID_LEFT = 110
+        MID_RIGHT = 70
+        MOST_RIGHT = 50
 
         robot.drive(speed)
         previous_state = (1,1,1)
@@ -113,11 +105,18 @@ if __name__ == '__main__':
                 time.sleep(0.2)
                 robot.direction.reset()
 
-            
-
             time.sleep(0.05)
             previous_state = etat
 
+
+
+if __name__ == '__main__':
+    robot = Robot()
+    
+    try:
+        # robot.suiviLigne()
+        while True :
+            robot.ledAvant.warning()
 
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
