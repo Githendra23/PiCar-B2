@@ -267,51 +267,54 @@ class BandeLed(threading.Thread):
             self.lightChange()
             pass
         
-    def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
+    def setLed(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
         self.set_led_color(led_num, colour[0], colour[1], colour[2])
         self.show()
-        
-    def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
+    
+    # Pour allumer toutes les leds arrières avec une couleur donnée et une luminosité donnée.
+    def setBackLeds(self, colour = [255, 255, 255], brightness = 255):
         BACK_LED = [8, 9, 10, 11, 12, 13]
         
         for led_num in BACK_LED:
-            self.set_led(led_num, colour, brightness)
+            self.setLed(led_num, colour, brightness)
             
         self.show()
     
+    
+    def off(self):
+        self.setBackLeds([0, 0, 0], 255)
+            
+        
+    # Pour avoir un effet de clignotement des leds arrières,
+    # on allume les leds arrières avec une couleur donnée pendant un certain temps,
+    # puis on les éteint pendant le même temps.
     def blinkAlert(self) :
         color = [255, 0, 0]
         delay = 0.125
-        led.set_back_leds(color,255)
+        led.setBackLeds(color,255)
         time.sleep(delay)
-        led.set_back_leds([0, 0, 0],255)
+        led.setBackLeds([0, 0, 0],255)
         time.sleep(delay)
 
+    # Pour avoir un effet de clignotement séquentiel des leds arrières,
+    # on allume les leds par couple (gauche/droite) avec un délai entre chaque couple.
     def sequentialWarning(self) :
-        LEFT_BACK_LED = [8,9,10]
-        RIGHT_BACK_LED = [13, 12, 11]
-
         COUPLES_LED = [(8,13), (9,12), (10,11)]
         
         color = [255,128,0]
 
         for left, right in COUPLES_LED:
-            self.set_led(left, color, 255)
-            self.set_led(right, color, 255)
+            self.setLed(left, color, 255)
+            self.setLed(right, color, 255)
             time.sleep(0.15)
 
-        self.set_back_leds([0,0,0],255)
+        self.setBackLeds([0,0,0],255)
         time.sleep(0.2)
 
 
         
 if __name__ == '__main__':
-    import os
-    
-    # print("spidev version is ", spidev.__version__)
-    # print("spidev device as show:")
-    # os.system("ls /dev/spi*")
 
     try:
         led = BandeLed(14, 255)
