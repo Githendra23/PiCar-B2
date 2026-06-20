@@ -15,7 +15,7 @@ class FeuxArriere(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(BandeLed, self).__init__(*args, **kwargs)
+        super(FeuxArriere, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
     
@@ -187,9 +187,9 @@ class FeuxArriere(threading.Thread):
     def blinkAlert(self) :
         color = [255, 0, 0]
         delay = 0.125
-        led.setBackLeds(color,255)
+        self.setBackLeds(color,255)
         time.sleep(delay)
-        led.setBackLeds([0, 0, 0],255)
+        self.setBackLeds([0, 0, 0],255)
         time.sleep(delay)
 
     # Pour avoir un effet de clignotement séquentiel des leds arrières,
@@ -211,12 +211,12 @@ class FeuxArriere(threading.Thread):
         
 if __name__ == '__main__':
 
-    led = BandeLED()
+    feuxArriere = FeuxArriere()
 
     try:
-        if led.check_spi_state() != 0:
+        if feuxArriere.check_spi_state() != 0:
             while True :
-                led.sequentialWarning()
+                feuxArriere.sequentialWarning()
         else:
             print("Fin du main()")
             
@@ -224,4 +224,4 @@ if __name__ == '__main__':
         print("Interruption via le clavier.")
 
     finally :
-        led.led_close()
+        feuxArriere.led_close()
