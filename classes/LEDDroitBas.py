@@ -4,7 +4,7 @@ import numpy
 from numpy import sin, cos, pi
 import time
 
-class BandeLed(threading.Thread):
+class LEDDroitBas(threading.Thread):
     def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
@@ -17,7 +17,7 @@ class BandeLed(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(BandeLed, self).__init__(*args, **kwargs)
+        super(LEDDroitBas, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
     def led_begin(self, bus = 0, device = 0):
@@ -311,13 +311,13 @@ if __name__ == '__main__':
     os.system("ls /dev/spi*")
 
     try:
-        led = BandeLed(14, 255)
+        ledDroitBas = LEDDroitBas(14, 255)
         
-        if led.check_spi_state() != 0:
-            led.set_back_leds([255, 0, 255],255)
+        if ledDroitBas.check_spi_state() != 0:
+            ledDroitBas.set_back_leds([255, 0, 255],255)
             time.sleep(7000)
         else:
-            led.led_close()
+            ledDroitBas.led_close()
             
     except KeyboardInterrupt:
-        led.led_close()
+        ledDroitBas.led_close()
