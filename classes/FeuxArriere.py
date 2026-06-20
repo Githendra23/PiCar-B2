@@ -199,73 +199,10 @@ class FeuxArriere(threading.Thread):
             r = rgb_max
             g = rgb_min
             b = rgb_max - rgb_adj
-        return [r, g, b]
-    
-    def police(self):
-        self.lightMode = 'police'
-        self.resume()
-        
-    def breath(self, R_input, G_input, B_input):
-        self.lightMode = 'breath'
-        self.colorBreathR = R_input
-        self.colorBreathG = G_input
-        self.colorBreathB = B_input
-        self.resume()    
+        return [r, g, b] 
             
     def resume(self):
         self.__flag.set()
-
-
-    def breathProcessing(self):
-        while self.lightMode == 'breath':
-            for i in range(0,self.breathSteps):
-                if self.lightMode != 'breath':
-                    break
-                self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
-                #self.show()
-                time.sleep(0.03)
-            for i in range(0,self.breathSteps):
-                if self.lightMode != 'breath':
-                    break
-                self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
-                #self.show()
-                time.sleep(0.03)
-                
-    def policeProcessing(self):
-        while self.lightMode == 'police':
-            for i in range(0,3):
-                self.set_all_led_color_data(0,0,255)
-                self.show()
-                time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
-                self.show()
-                time.sleep(0.05)
-            if self.lightMode != 'police':
-                break
-            time.sleep(0.1)
-            for i in range(0,3):
-                self.set_all_led_color_data(255,0,0)
-                self.show()
-                time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
-                self.show()
-                time.sleep(0.05)
-            time.sleep(0.1)
-            
-            
-    def lightChange(self):
-        if self.lightMode == 'none':
-            self.pause()
-        elif self.lightMode == 'police':
-            self.policeProcessing()
-        elif self.lightMode == 'breath':
-            self.breathProcessing()    
-    
-    def run(self):
-        while 1:
-            self.__flag.wait()
-            self.lightChange()
-            pass
         
     def setLed(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
@@ -281,10 +218,10 @@ class FeuxArriere(threading.Thread):
             
         self.show()
     
-    
+    # Éteint toutes les leds arrières.
     def off(self):
         self.setBackLeds([0, 0, 0], 255)
-            
+    
         
     # Pour avoir un effet de clignotement des leds arrières,
     # on allume les leds arrières avec une couleur donnée pendant un certain temps,
