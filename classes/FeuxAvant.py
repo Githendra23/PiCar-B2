@@ -111,7 +111,7 @@ class FeuxAvant():
         print("║Éteindre : +10             ║")
         print("║Exemple : 24 = éteindre L_R║")
         print("╚═══════════════════════════╝")
-
+    
     # Clignotant gauche
     def blinker_left(self) :
         # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
@@ -138,6 +138,14 @@ class FeuxAvant():
         self.switch(28)
         time.sleep(delay)
 
+    def off(self) :
+        self.switch(24)
+        self.switch(25)
+        self.switch(26)
+        self.switch(27)
+        self.switch(28)
+        self.switch(29)
+    
     # Feux de détresse
     def warning(self) :
         # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
