@@ -2,7 +2,7 @@ import spidev
 import numpy
 import time
 
-class BandeLed(threading.Thread):
+class FeuxArriere(threading.Thread):
     def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
