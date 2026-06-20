@@ -1,5 +1,6 @@
-import spidev
 import numpy
+import spidev
+import threading
 import time
 
 class FeuxArriere(threading.Thread):
