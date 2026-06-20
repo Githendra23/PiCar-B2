@@ -2,7 +2,7 @@ from gpiozero import PWMOutputDevice as PWM
 from gpiozero import LED
 import time
 
-class LEDAvant():
+class FeuxAvant():
     # Constructeur
     def __init__(self):
         Left_R = 13
@@ -176,8 +176,8 @@ class LEDAvant():
     
 
 if __name__ == "__main__":
-    ledAvant = LEDAvant()
+    feuxAvant = FeuxAvant()
     while True:
-        ledAvant.instruction()
+        feuxAvant.instruction()
         commande = int(input("Commande : "))
-        ledAvant.switch(commande)
+        feuxAvant.switch(commande)
