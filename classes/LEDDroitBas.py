@@ -302,22 +302,20 @@ class LEDDroitBas(threading.Thread):
             self.set_led(led_num, colour, brightness)
             
         self.show()
-        
-if __name__ == '__main__':
-    import os
     
-    print("spidev version is ", spidev.__version__)
-    print("spidev device as show:")
-    os.system("ls /dev/spi*")
 
+if __name__ == '__main__':
     try:
-        ledDroitBas = LEDDroitBas(14, 255)
+        ledDroitBas = LEDDroitBas()
         
-        if ledDroitBas.check_spi_state() != 0:
-            ledDroitBas.set_back_leds([255, 0, 255],255)
-            time.sleep(7000)
+        if(ledDroitBas.check_spi_state() != 0):
+            ledDroitBas.set_bottomRight_leds([255, 0, 0], 255)
+            ledDroitBas.set_front_leds([0, 255, 0], 255)
+            time.sleep(2)
         else:
             ledDroitBas.led_close()
+            time.sleep(2)
             
     except KeyboardInterrupt:
+        print("Interruption du programme via le clavier.")
         ledDroitBas.led_close()
