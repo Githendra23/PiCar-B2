@@ -201,59 +201,10 @@ class LEDGaucheBas(threading.Thread):
             r = rgb_max
             g = rgb_min
             b = rgb_max - rgb_adj
-        return [r, g, b]
-    
-    def police(self):
-        self.lightMode = 'police'
-        self.resume()
-        
-    def breath(self, R_input, G_input, B_input):
-        self.lightMode = 'breath'
-        self.colorBreathR = R_input
-        self.colorBreathG = G_input
-        self.colorBreathB = B_input
-        self.resume()    
+        return [r, g, b]   
             
     def resume(self):
-        self.__flag.set()
-
-
-    def breathProcessing(self):
-        while self.lightMode == 'breath':
-            for i in range(0,self.breathSteps):
-                if self.lightMode != 'breath':
-                    break
-                self.setAllLEDColor(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
-                #self.show()
-                time.sleep(0.03)
-            for i in range(0,self.breathSteps):
-                if self.lightMode != 'breath':
-                    break
-                self.setAllLEDColor(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
-                #self.show()
-                time.sleep(0.03)
-                
-    def policeProcessing(self):
-        while self.lightMode == 'police':
-            for i in range(0,3):
-                self.set_all_led_color_data(0,0,255)
-                self.show()
-                time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
-                self.show()
-                time.sleep(0.05)
-            if self.lightMode != 'police':
-                break
-            time.sleep(0.1)
-            for i in range(0,3):
-                self.set_all_led_color_data(255,0,0)
-                self.show()
-                time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
-                self.show()
-                time.sleep(0.05)
-            time.sleep(0.1)
-            
+        self.__flag.set() 
             
     def lightChange(self):
         if self.lightMode == 'none':
@@ -268,18 +219,12 @@ class LEDGaucheBas(threading.Thread):
             self.__flag.wait()
             self.lightChange()
             pass
-        
+
+    ### LES TRUCS VRAIMENT UTILES SELON MOI
+
     def setLed(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
         self.setLEDColor(led_num, colour[0], colour[1], colour[2])
-        self.show()
-        
-    def setBack(self, colour = [255, 255, 255], brightness = 255):
-        BACK_LED = [8, 9, 10, 11, 12, 13]
-        
-        for led_num in BACK_LED:
-            self.setLed(led_num, colour, brightness)
-            
         self.show()
         
     def setFront(self, colour = [255, 255, 255], brightness = 255):
@@ -290,30 +235,27 @@ class LEDGaucheBas(threading.Thread):
             
         self.show()
         
-    def setBottomLeft(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [5, 6, 7]
+    def setBottom(self, colour = [255, 255, 255], brightness = 255):
+        BOTTOM_LED = [5, 6, 7]
         
-        for led_num in FRONT_LED:
+        for led_num in BOTTOM_LED:
             self.setLed(led_num, colour, brightness)
             
         self.show()
         
 
 if __name__ == '__main__':
-    import os
-    
-    print("spidev version is ", spidev.__version__)
-    print("spidev device as show:")
-    os.system("ls /dev/spi*")
-
     try:
-        ledGaucheBas = LEDGaucheBas(14, 255)
+        ledGaucheBas = LEDGaucheBas()
         
-        if ledGaucheBas.check_spi_state() != 0:
-            ledGaucheBas.set_back_leds([255, 0, 255],255)
-            time.sleep(7000)
+        if(ledGaucheBas.check_spi_state() != 0):
+            ledGaucheBas.setFront([0, 255, 0], 255)
+            ledGaucheBas.setBottom([0, 0, 255], 255)
+            time.sleep(2)
         else:
             ledGaucheBas.LEDClose()
+            time.sleep(2)
             
     except KeyboardInterrupt:
+        print("Interruption du programme via le clavier.")
         ledGaucheBas.LEDClose()

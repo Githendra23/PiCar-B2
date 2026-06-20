@@ -200,59 +200,10 @@ class LEDDroitBas(threading.Thread):
             r = rgb_max
             g = rgb_min
             b = rgb_max - rgb_adj
-        return [r, g, b]
-    
-    def police(self):
-        self.lightMode = 'police'
-        self.resume()
-        
-    def breath(self, R_input, G_input, B_input):
-        self.lightMode = 'breath'
-        self.colorBreathR = R_input
-        self.colorBreathG = G_input
-        self.colorBreathB = B_input
-        self.resume()    
+        return [r, g, b]  
             
     def resume(self):
-        self.__flag.set()
-
-
-    def breathProcessing(self):
-        while self.lightMode == 'breath':
-            for i in range(0,self.breathSteps):
-                if self.lightMode != 'breath':
-                    break
-                self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
-                #self.show()
-                time.sleep(0.03)
-            for i in range(0,self.breathSteps):
-                if self.lightMode != 'breath':
-                    break
-                self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
-                #self.show()
-                time.sleep(0.03)
-                
-    def policeProcessing(self):
-        while self.lightMode == 'police':
-            for i in range(0,3):
-                self.set_all_led_color_data(0,0,255)
-                self.show()
-                time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
-                self.show()
-                time.sleep(0.05)
-            if self.lightMode != 'police':
-                break
-            time.sleep(0.1)
-            for i in range(0,3):
-                self.set_all_led_color_data(255,0,0)
-                self.show()
-                time.sleep(0.05)
-                self.set_all_led_color_data(0,0,0)
-                self.show()
-                time.sleep(0.05)
-            time.sleep(0.1)
-            
+        self.__flag.set()       
             
     def lightChange(self):
         if self.lightMode == 'none':
@@ -267,41 +218,27 @@ class LEDDroitBas(threading.Thread):
             self.__flag.wait()
             self.lightChange()
             pass
-        
-    def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
+    
+    ### LES TRUCS VRAIMENT UTILES SELON MOI
+    
+    def setLED(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
         self.set_led_color(led_num, colour[0], colour[1], colour[2])
         self.show()
         
-    def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
-        BACK_LED = [8, 9, 10, 11, 12, 13]
-        
-        for led_num in BACK_LED:
-            self.set_led(led_num, colour, brightness)
-            
-        self.show()
-        
-    def set_front_leds(self, colour = [255, 255, 255], brightness = 255):
+    def setFront(self, colour = [255, 255, 255], brightness = 255):
         FRONT_LED = [0, 1]
         
         for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
+            self.setLED(led_num, colour, brightness)
             
         self.show()
         
-    def set_bottomLeft_leds(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [5, 6, 7]
+    def setBottom(self, colour = [255, 255, 255], brightness = 255):
+        BOTTOM_LED = [2, 3, 4]
         
-        for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
-            
-        self.show()
-        
-    def set_bottomRight_leds(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [2, 3, 4]
-        
-        for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
+        for led_num in BOTTOM_LED:
+            self.setLED(led_num, colour, brightness)
             
         self.show()
     
@@ -311,8 +248,7 @@ if __name__ == '__main__':
         ledDroitBas = LEDDroitBas()
         
         if(ledDroitBas.check_spi_state() != 0):
-            ledDroitBas.set_bottomRight_leds([255, 0, 0], 255)
-            ledDroitBas.set_front_leds([0, 255, 0], 255)
+            ledDroitBas.setBottom([255, 0, 0], 255)
             time.sleep(2)
         else:
             ledDroitBas.led_close()
