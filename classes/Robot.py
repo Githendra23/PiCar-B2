@@ -4,9 +4,13 @@ import Batterie
 import Buzzer
 import CapteurSuiviLigne
 import Direction
-import LEDAvant
+import FeuxAvant
+import FeuxArriere
+import LEDDroitBas
+import LEDGaucheBas
 import Moteur
 import Tourelle
+
 
 
 class Robot :
@@ -15,7 +19,13 @@ class Robot :
         self.buzzer = Buzzer.Buzzer()
         self.capteurSuiviLigne = CapteurSuiviLigne.CapteurSuiviLigne()
         self.direction = Direction.Direction()
-        self.ledAvant = LEDAvant.LEDAvant()
+        
+        self.feuxAvant = FeuxAvant.FeuxAvant()
+        self.feuxArriere = FeuxArriere.FeuxArriere()
+        
+        self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
+        self.ledDroitBas = LEDDroitBas.LEDDroitBas()
+        
         self.moteur = Moteur.Moteur()
         self.tourelle = Tourelle.Tourelle()
 
@@ -122,7 +132,7 @@ if __name__ == '__main__':
     try:
         # robot.suiviLigne()
         while True :
-            robot.ledAvant.warning()
+            robot.feuxAvant.warning()
 
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
