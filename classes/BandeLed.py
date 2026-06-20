@@ -20,6 +20,7 @@ class BandeLed(threading.Thread):
         super(BandeLed, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
+    
     def led_begin(self, bus = 0, device = 0):
         self.bus = bus
         self.device = device
@@ -278,22 +279,51 @@ class BandeLed(threading.Thread):
             self.set_led(led_num, colour, brightness)
             
         self.show()
+    
+    def blinkAlert(self) :
+        color = [255, 0, 0]
+        delay = 0.125
+        led.set_back_leds(color,255)
+        time.sleep(delay)
+        led.set_back_leds([0, 0, 0],255)
+        time.sleep(delay)
+
+    def sequentialWarning(self) :
+        LEFT_BACK_LED = [8,9,10]
+        RIGHT_BACK_LED = [13, 12, 11]
+
+        COUPLES_LED = [(8,13), (9,12), (10,11)]
+        
+        color = [255,128,0]
+
+        for left, right in COUPLES_LED:
+            self.set_led(left, color, 255)
+            self.set_led(right, color, 255)
+            time.sleep(0.15)
+
+        self.set_back_leds([0,0,0],255)
+        time.sleep(0.2)
+
+
         
 if __name__ == '__main__':
     import os
     
-    print("spidev version is ", spidev.__version__)
-    print("spidev device as show:")
-    os.system("ls /dev/spi*")
+    # print("spidev version is ", spidev.__version__)
+    # print("spidev device as show:")
+    # os.system("ls /dev/spi*")
 
     try:
         led = BandeLed(14, 255)
         
         if led.check_spi_state() != 0:
-            led.set_back_leds([255, 0, 255],255)
-            time.sleep(7000)
+            while True :
+                led.sequentialWarning()
         else:
-            led.led_close()
+            print("Fin du main()")
             
     except KeyboardInterrupt:
+        print("Interruption via le clavier.")
+
+    finally :
         led.led_close()
