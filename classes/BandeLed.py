@@ -2,21 +2,24 @@ import spidev
 import numpy
 import time
 
-class BandeLED(threading.Thread):
-    def __init__(self):
-        self.bus = 0
-        self.device = 0
-
-        self.LEDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-
-        self.set_led_type('GRB')
-        self.set_led_count(len(self.LEDS))
-        self.spi = spidev.SpiDev()
-        self.led_brightness = 0
-        self.led_begin(self.bus, self.device)
-        self.set_all_led_rgb([0, 0, 0])
-
-    def led_begin(self, bus=0, device=0):
+class BandeLed(threading.Thread):
+    def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
+        self.set_led_type(sequence)
+        self.set_led_count(count)
+        self.set_led_brightness(bright)
+        self.led_begin(bus, device)
+        self.lightMode = 'none'
+        self.colorBreathR = 0
+        self.colorBreathG = 0
+        self.colorBreathB = 0
+        self.breathSteps = 10
+        #self.spi_gpio_info()
+        self.set_all_led_color(0,0,0)
+        super(BandeLed, self).__init__(*args, **kwargs)
+        self.__flag = threading.Event()
+        self.__flag.clear()
+    
+    def led_begin(self, bus = 0, device = 0):
         self.bus = bus
         self.device = device
 
@@ -108,70 +111,117 @@ class BandeLED(threading.Thread):
         if led_num not in self.LEDS:
             raise ValueError(f"LED {led_num} inexistante. LED valides : {self.LEDS}")
 
+    def breathProcessing(self):
+        while self.lightMode == 'breath':
+            for i in range(0,self.breathSteps):
+                if self.lightMode != 'breath':
+                    break
+                self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
+                #self.show()
+                time.sleep(0.03)
+            for i in range(0,self.breathSteps):
+                if self.lightMode != 'breath':
+                    break
+                self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
+                #self.show()
+                time.sleep(0.03)
+                
+    def policeProcessing(self):
+        while self.lightMode == 'police':
+            for i in range(0,3):
+                self.set_all_led_color_data(0,0,255)
+                self.show()
+                time.sleep(0.05)
+                self.set_all_led_color_data(0,0,0)
+                self.show()
+                time.sleep(0.05)
+            if self.lightMode != 'police':
+                break
+            time.sleep(0.1)
+            for i in range(0,3):
+                self.set_all_led_color_data(255,0,0)
+                self.show()
+                time.sleep(0.05)
+                self.set_all_led_color_data(0,0,0)
+                self.show()
+                time.sleep(0.05)
+            time.sleep(0.1)
+            
+            
+    def lightChange(self):
+        if self.lightMode == 'none':
+            self.pause()
+        elif self.lightMode == 'police':
+            self.policeProcessing()
+        elif self.lightMode == 'breath':
+            self.breathProcessing()    
+    
+    def run(self):
+        while 1:
+            self.__flag.wait()
+            self.lightChange()
+            pass
+        
+    def setLed(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
         self.set_led_rgb_data(led_num, colour)
         self.show()
-
-    def set_back_leds(self, colour=[255, 255, 255], brightness=255):
-        self.led_brightness = brightness
-
-        for led_num in self.LEDS[8:14]:
-            self.set_led_rgb_data(led_num, colour)
-
+    
+    # Pour allumer toutes les leds arrières avec une couleur donnée et une luminosité donnée.
+    def setBackLeds(self, colour = [255, 255, 255], brightness = 255):
+        BACK_LED = [8, 9, 10, 11, 12, 13]
+        
+        for led_num in BACK_LED:
+            self.setLed(led_num, colour, brightness)
+            
         self.show()
+    
+    
+    def off(self):
+        self.setBackLeds([0, 0, 0], 255)
+            
+        
+    # Pour avoir un effet de clignotement des leds arrières,
+    # on allume les leds arrières avec une couleur donnée pendant un certain temps,
+    # puis on les éteint pendant le même temps.
+    def blinkAlert(self) :
+        color = [255, 0, 0]
+        delay = 0.125
+        led.setBackLeds(color,255)
+        time.sleep(delay)
+        led.setBackLeds([0, 0, 0],255)
+        time.sleep(delay)
 
-    def set_front_leds(self, colour=[255, 255, 255], brightness=255):
-        self.led_brightness = brightness
+    # Pour avoir un effet de clignotement séquentiel des leds arrières,
+    # on allume les leds par couple (gauche/droite) avec un délai entre chaque couple.
+    def sequentialWarning(self) :
+        COUPLES_LED = [(8,13), (9,12), (10,11)]
+        
+        color = [255,128,0]
 
-        for led_num in self.LEDS[0:2]:
-            self.set_led_rgb_data(led_num, colour)
+        for left, right in COUPLES_LED:
+            self.setLed(left, color, 255)
+            self.setLed(right, color, 255)
+            time.sleep(0.15)
 
-        self.show()
-
-    def set_bottomLeft_leds(self, colour=[255, 255, 255], brightness=255):
-        self.led_brightness = brightness
-
-        for led_num in self.LEDS[5:8]:
-            self.set_led_rgb_data(led_num, colour)
-
-        self.show()
-
-    def set_bottomRight_leds(self, colour=[255, 255, 255], brightness=255):
-        self.led_brightness = brightness
-
-        for led_num in self.LEDS[2:5]:
-            self.set_led_rgb_data(led_num, colour)
-
-        self.show()
+        self.setBackLeds([0,0,0],255)
+        time.sleep(0.2)
 
 
+        
 if __name__ == '__main__':
-    import os
-
-    print("spidev version is ", spidev.__version__)
-    print("spidev device as show:")
-    os.system("ls /dev/spi*")
 
     led = BandeLED()
 
     try:
         if led.check_spi_state() != 0:
-            led.set_back_leds([255, 0, 0], 255)
-            time.sleep(1)
-            led.set_back_leds([0, 0, 255], 255)
-            time.sleep(1)
-
-            led.set_all_led_rgb([0, 0, 0])
-            time.sleep(1)
-
-            led.set_led(0, [255, 0, 0], 255)
-            time.sleep(1)
-            led.set_led(5, [0, 255, 0], 128)
-            time.sleep(1)
-
-            led.led_close()
+            while True :
+                led.sequentialWarning()
         else:
-            led.led_close()
-
+            print("Fin du main()")
+            
     except KeyboardInterrupt:
+        print("Interruption via le clavier.")
+
+    finally :
         led.led_close()
