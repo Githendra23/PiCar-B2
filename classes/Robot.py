@@ -1,5 +1,6 @@
 import time
 
+import Batterie
 import Buzzer
 import CapteurSuiviLigne
 import Direction
@@ -10,6 +11,7 @@ import Tourelle
 
 class Robot :
     def __init__(self):
+        self.batterie = Batterie.Batterie()
         self.buzzer = Buzzer.Buzzer()
         self.capteurSuiviLigne = CapteurSuiviLigne.CapteurSuiviLigne()
         self.direction = Direction.Direction()
@@ -20,6 +22,9 @@ class Robot :
     
     def bip(self) :
         self.buzzer.bip()
+    
+    def getBatteryPercentage(self) :
+        return self.batterie.getPercentage()
 
     def drive(self, speed) :
         self.moteur.drive(speed)
@@ -112,6 +117,7 @@ class Robot :
 
 if __name__ == '__main__':
     robot = Robot()
+    print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
         # robot.suiviLigne()
