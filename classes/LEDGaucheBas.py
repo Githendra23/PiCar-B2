@@ -252,10 +252,9 @@ if __name__ == '__main__':
             ledGaucheBas.setFront([0, 255, 0], 255)
             ledGaucheBas.setBottom([0, 0, 255], 255)
             time.sleep(2)
-        else:
-            ledGaucheBas.LEDClose()
-            time.sleep(2)
             
     except KeyboardInterrupt:
         print("Interruption du programme via le clavier.")
+    
+    finally :
         ledGaucheBas.LEDClose()

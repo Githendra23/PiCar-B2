@@ -250,10 +250,9 @@ if __name__ == '__main__':
         if(ledDroitBas.check_spi_state() != 0):
             ledDroitBas.setBottom([255, 0, 0], 255)
             time.sleep(2)
-        else:
-            ledDroitBas.led_close()
-            time.sleep(2)
             
     except KeyboardInterrupt:
         print("Interruption du programme via le clavier.")
+    
+    finally :
         ledDroitBas.led_close()
