@@ -7,9 +7,9 @@ import time
 
 class LEDGaucheBas(threading.Thread):
     def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
-        self.set_led_type(sequence)
-        self.set_led_count(count)
-        self.set_led_brightness(bright)
+        self.setLedType(sequence)
+        self.setLedCount(count)
+        self.setLedBrightness(bright)
         self.led_begin(bus, device)
         self.lightMode = 'none'
         self.colorBreathR = 0
@@ -17,11 +17,12 @@ class LEDGaucheBas(threading.Thread):
         self.colorBreathB = 0
         self.breathSteps = 10
         #self.spi_gpio_info()
-        self.set_all_led_color(0,0,0)
+        self.setAllLEDColor(0,0,0)
 
         super(LEDGaucheBas, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
+    
     def led_begin(self, bus = 0, device = 0):
         self.bus = bus
         self.device = device
@@ -58,16 +59,16 @@ class LEDGaucheBas(threading.Thread):
         elif self.bus == 6:
             print("SPI6-MOSI: GPIO20(WS2812-PIN)  SPI6-MISO: GPIO19  SPI6-SCLK: GPIO21  SPI6-CE0: GPIO18  SPI6-CE1: GPIO27")
     
-    def led_close(self):
-        self.set_all_led_rgb([0,0,0])
+    def LEDClose(self):
+        self.setAllLEDRGB([0,0,0])
         self.spi.close()
     
-    def set_led_count(self, count):
+    def setLedCount(self, count):
         self.led_count = count
         self.led_color = [0,0,0] * self.led_count
         self.led_original_color = [0,0,0] * self.led_count
     
-    def set_led_type(self, rgb_type):
+    def setLedType(self, rgb_type):
         try:
             led_type = ['RGB','RBG','GRB','GBR','BRG','BGR']
             led_type_offset = [0x06,0x09,0x12,0x21,0x18,0x24]
@@ -82,12 +83,12 @@ class LEDGaucheBas(threading.Thread):
             self.led_blue_offset = 2
             return -1
     
-    def set_led_brightness(self, brightness):
+    def setLedBrightness(self, brightness):
         self.led_brightness = brightness
         for i in range(self.led_count):
-            self.set_led_rgb_data(i, self.led_original_color)
+            self.setLedRGBData(i, self.led_original_color)
             
-    def set_ledpixel(self, index, r, g, b):
+    def setLEDPixel(self, index, r, g, b):
         p = [0,0,0]
         p[self.led_red_offset] = round(r * self.led_brightness / 255)
         p[self.led_green_offset] = round(g * self.led_brightness / 255)
@@ -98,36 +99,36 @@ class LEDGaucheBas(threading.Thread):
         for i in range(3):
             self.led_color[index*3+i] = p[i]
 
-    def set_led_color_data(self, index, r, g, b):
-        self.set_ledpixel(index, r, g, b)  
+    def setLEDColorData(self, index, r, g, b):
+        self.setLEDPixel(index, r, g, b)  
         
-    def set_led_rgb_data(self, index, color):
-        self.set_ledpixel(index, color[0], color[1], color[2])   
+    def setLedRGBData(self, index, color):
+        self.setLEDPixel(index, color[0], color[1], color[2])   
         
-    def set_led_color(self, index, r, g, b):
-        self.set_ledpixel(index, r, g, b)
+    def setLEDColor(self, index, r, g, b):
+        self.setLEDPixel(index, r, g, b)
         self.show()
         
-    def set_led_rgb(self, index, color):
-        self.set_led_rgb_data(index, color)   
+    def setLEDRGB(self, index, color):
+        self.setLedRGBData(index, color)   
         self.show() 
     
     def set_all_led_color_data(self, r, g, b):
         for i in range(self.led_count):
-            self.set_led_color_data(i, r, g, b)
+            self.setLEDColorData(i, r, g, b)
             
     def set_all_led_rgb_data(self, color):
         for i in range(self.led_count):
-            self.set_led_rgb_data(i, color)   
+            self.setLedRGBData(i, color)   
         
-    def set_all_led_color(self, r, g, b):
+    def setAllLEDColor(self, r, g, b):
         for i in range(self.led_count):
-            self.set_led_color_data(i, r, g, b)
+            self.setLEDColorData(i, r, g, b)
         self.show()
         
-    def set_all_led_rgb(self, color):
+    def setAllLEDRGB(self, color):
         for i in range(self.led_count):
-            self.set_led_rgb_data(i, color) 
+            self.setLedRGBData(i, color) 
         self.show()
     
     def write_ws2812_numpy8(self):
@@ -222,13 +223,13 @@ class LEDGaucheBas(threading.Thread):
             for i in range(0,self.breathSteps):
                 if self.lightMode != 'breath':
                     break
-                self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
+                self.setAllLEDColor(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
                 #self.show()
                 time.sleep(0.03)
             for i in range(0,self.breathSteps):
                 if self.lightMode != 'breath':
                     break
-                self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
+                self.setAllLEDColor(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
                 #self.show()
                 time.sleep(0.03)
                 
@@ -268,32 +269,32 @@ class LEDGaucheBas(threading.Thread):
             self.lightChange()
             pass
         
-    def set_led(self, led_num, colour = [255, 255, 255], brightness = 255):
+    def setLed(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
-        self.set_led_color(led_num, colour[0], colour[1], colour[2])
+        self.setLEDColor(led_num, colour[0], colour[1], colour[2])
         self.show()
         
-    def set_back_leds(self, colour = [255, 255, 255], brightness = 255):
+    def setBack(self, colour = [255, 255, 255], brightness = 255):
         BACK_LED = [8, 9, 10, 11, 12, 13]
         
         for led_num in BACK_LED:
-            self.set_led(led_num, colour, brightness)
+            self.setLed(led_num, colour, brightness)
             
         self.show()
         
-    def set_front_leds(self, colour = [255, 255, 255], brightness = 255):
+    def setFront(self, colour = [255, 255, 255], brightness = 255):
         FRONT_LED = [0, 1]
         
         for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
+            self.setLed(led_num, colour, brightness)
             
         self.show()
         
-    def set_bottomLeft_leds(self, colour = [255, 255, 255], brightness = 255):
+    def setBottomLeft(self, colour = [255, 255, 255], brightness = 255):
         FRONT_LED = [5, 6, 7]
         
         for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
+            self.setLed(led_num, colour, brightness)
             
         self.show()
         
@@ -312,7 +313,7 @@ if __name__ == '__main__':
             ledGaucheBas.set_back_leds([255, 0, 255],255)
             time.sleep(7000)
         else:
-            ledGaucheBas.led_close()
+            ledGaucheBas.LEDClose()
             
     except KeyboardInterrupt:
-        ledGaucheBas.led_close()
+        ledGaucheBas.LEDClose()
