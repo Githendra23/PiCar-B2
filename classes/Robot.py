@@ -136,6 +136,8 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
+    finally :
         robot.direction.reset()
+        robot.feuxAvant.off()
         robot.resetTourelle()
         robot.stopEngine()
