@@ -4,8 +4,8 @@ import numpy
 from numpy import sin, cos, pi
 import time
 
-class LEDDroitBas(threading.Thread):
 
+class LEDGaucheBas(threading.Thread):
     def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
@@ -18,8 +18,8 @@ class LEDDroitBas(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(LEDDroitBas, self).__init__(*args, **kwargs)
 
+        super(LEDGaucheBas, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
     def led_begin(self, bus = 0, device = 0):
@@ -297,27 +297,22 @@ class LEDDroitBas(threading.Thread):
             
         self.show()
         
-    def set_bottomRight_leds(self, colour = [255, 255, 255], brightness = 255):
-        FRONT_LED = [2, 3, 4]
-        
-        for led_num in FRONT_LED:
-            self.set_led(led_num, colour, brightness)
-            
-        self.show()
-    
 
 if __name__ == '__main__':
+    import os
+    
+    print("spidev version is ", spidev.__version__)
+    print("spidev device as show:")
+    os.system("ls /dev/spi*")
+
     try:
-        ledDroitBas = LEDDroitBas()
+        ledGaucheBas = LEDGaucheBas(14, 255)
         
-        if(ledDroitBas.check_spi_state() != 0):
-            ledDroitBas.set_bottomRight_leds([255, 0, 0], 255)
-            ledDroitBas.set_front_leds([0, 255, 0], 255)
-            time.sleep(2)
+        if ledGaucheBas.check_spi_state() != 0:
+            ledGaucheBas.set_back_leds([255, 0, 255],255)
+            time.sleep(7000)
         else:
-            ledDroitBas.led_close()
-            time.sleep(2)
+            ledGaucheBas.led_close()
             
     except KeyboardInterrupt:
-        print("Interruption du programme via le clavier.")
-        ledDroitBas.led_close()
+        ledGaucheBas.led_close()
