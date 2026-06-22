@@ -21,7 +21,7 @@ class Robot :
         self.direction = Direction.Direction()
         
         self.feuxAvant = FeuxAvant.FeuxAvant()
-        self.feuxArriere = FeuxArriere.FeuxArriere()
+        # self.feuxArriere = FeuxArriere.FeuxArriere()
         
         self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
         self.ledDroitBas = LEDDroitBas.LEDDroitBas()
@@ -130,9 +130,9 @@ if __name__ == '__main__':
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
-        # robot.suiviLigne()
-        while True :
-            robot.feuxAvant.warning()
+        robot.suiviLigne()
+        # while True :
+        #     robot.feuxAvant.warning()
 
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
