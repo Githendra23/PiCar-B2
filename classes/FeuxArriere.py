@@ -258,10 +258,7 @@ if __name__ == '__main__':
         
         if feuxArriere.check_spi_state() != 0:
             while True :
-                feuxArriere.setBackLeds([255, 0, 0], 255)
-                time.sleep(0.5)
-                for i in range (5) :
-                    feuxArriere.blinkAlert()
+                feuxArriere.sequentialWarning()
         else:
             print("Fin du main()")
             
