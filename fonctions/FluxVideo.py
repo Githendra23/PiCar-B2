@@ -2,6 +2,7 @@ from picamera2 import Picamera2
 import cv2
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from RecoFleche import RecoFleche
+import threading
 
 
 # Création de la caméra
@@ -23,52 +24,36 @@ picam2.start()
 
 
 class StreamingHandler(BaseHTTPRequestHandler):
+    """Handler pour le flux avec détection de flèches."""
     def do_GET(self):
-        """
-        Fonction appelée automatiquement quand un navigateur
-        se connecte à l'adresse du serveur.
-        """
-
         if self.path != "/":
             self.send_error(404)
             return
 
-        # Réponse HTTP correcte
         self.send_response(200)
         self.send_header("Age", 0)
         self.send_header("Cache-Control", "no-cache, private")
         self.send_header("Pragma", "no-cache")
-
-        # Type spécial pour envoyer plusieurs images JPEG à la suite
         self.send_header(
             "Content-Type",
             "multipart/x-mixed-replace; boundary=FRAME"
         )
-
         self.end_headers()
 
         try:
             while True:
-                # Capture d'une image depuis la caméra
                 image = picam2.capture_array()
-
-                # Analyse de l'image avec la classe RecoFleche
                 image, direction = detecteur.detecter(image)
 
-                # Affichage terminal uniquement si une direction est trouvée
                 if direction != "Inconnue":
                     print("Direction détectée :", direction)
 
-                # Conversion RGB vers BGR pour OpenCV
                 image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-                # Encodage de l'image en JPEG
                 success, jpeg = cv2.imencode(".jpg", image_bgr)
 
                 if not success:
                     continue
 
-                # Envoi de l'image JPEG au navigateur
                 self.wfile.write(b"--FRAME\r\n")
                 self.send_header("Content-Type", "image/jpeg")
                 self.send_header("Content-Length", str(len(jpeg)))
@@ -80,18 +65,67 @@ class StreamingHandler(BaseHTTPRequestHandler):
             pass
 
 
-try:
-    # 0.0.0.0 permet d'accéder au serveur depuis ton PC
-    serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
+class RawStreamingHandler(BaseHTTPRequestHandler):
+    """Handler pour le flux brut, sans détection."""
+    def do_GET(self):
+        if self.path != "/":
+            self.send_error(404)
+            return
 
-    print("Serveur lancé.")
-    print("Ouvre cette adresse dans ton navigateur :")
-    print("http://10.101.2.116:8000")
+        self.send_response(200)
+        self.send_header("Age", 0)
+        self.send_header("Cache-Control", "no-cache, private")
+        self.send_header("Pragma", "no-cache")
+        self.send_header(
+            "Content-Type",
+            "multipart/x-mixed-replace; boundary=FRAME"
+        )
+        self.end_headers()
 
-    serveur.serve_forever()
+        try:
+            while True:
+                image = picam2.capture_array()
+                image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                success, jpeg = cv2.imencode(".jpg", image_bgr)
 
-except KeyboardInterrupt:
-    print("Arrêt du serveur")
+                if not success:
+                    continue
 
-finally:
-    picam2.stop()
+                self.wfile.write(b"--FRAME\r\n")
+                self.send_header("Content-Type", "image/jpeg")
+                self.send_header("Content-Length", str(len(jpeg)))
+                self.end_headers()
+                self.wfile.write(jpeg.tobytes())
+                self.wfile.write(b"\r\n")
+
+        except Exception:
+            pass
+
+
+def run_server(server, port):
+    print(f"Serveur lancé sur le port {port}")
+    server.serve_forever()
+
+
+if __name__ == "__main__":
+    try:
+        serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
+        raw_serveur = HTTPServer(("0.0.0.0", 8001), RawStreamingHandler)
+
+        print("Serveurs lancés.")
+        print("Flux avec détection : http://10.101.2.116:8000")
+        print("Flux brut : http://10.101.2.116:8001")
+
+        # Lance les serveurs dans des threads séparés
+        threading.Thread(target=run_server, args=(serveur, 8000), daemon=True).start()
+        threading.Thread(target=run_server, args=(raw_serveur, 8001), daemon=True).start()
+
+        # Garde le programme en vie
+        while True:
+            pass
+
+    except KeyboardInterrupt:
+        print("Arrêt des serveurs")
+
+    finally:
+        picam2.stop()
