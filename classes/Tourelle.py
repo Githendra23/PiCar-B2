@@ -36,7 +36,7 @@ class Tourelle:
             ValueError("Tourelle rotation Y - Angle hors de portée")
 
 
-    def analyse(self, distance_alerte) :
+    def analyse(self) :
         matrice = []
         self.reset()
 
@@ -45,15 +45,10 @@ class Tourelle:
             matrice.append(self.capteurUltrason.distance())
             time.sleep(0.01)
         
-        for i in range(0,180,1) :
-            if(matrice[i] <= distance_alerte) :
-                print(f"Angle {i}° : obstacle")
-            else :
-                # print(f"Angle {i}° : libre")
-                continue
-        
-        matrice.clear()
-        
+        return matrice
+
+    def getDistance(self) :
+        return self.capteurUltrason.distance()
 
     def print_angle(self) :
         print(f"Angle X : ")
