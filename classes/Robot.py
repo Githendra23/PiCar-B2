@@ -1,3 +1,4 @@
+import threading
 import time
 
 import Batterie
@@ -21,7 +22,7 @@ class Robot :
         self.direction = Direction.Direction()
         
         self.feuxAvant = FeuxAvant.FeuxAvant()
-        # self.feuxArriere = FeuxArriere.FeuxArriere()
+        self.feuxArriere = FeuxArriere.FeuxArriere(14, 255)
         
         self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
         self.ledDroitBas = LEDDroitBas.LEDDroitBas()
@@ -54,6 +55,10 @@ class Robot :
     def turnTourelleYAxis(self, angle) :
         self.tourelle.turn_y_axis(angle)
         
+    def blinkAlert(self) :
+        thread = threading.Thread(target=self.feuxArriere.blinkAlert)
+        thread.start()
+
 
     def suiviLigne(self) :
         speed = 35
@@ -63,15 +68,37 @@ class Robot :
         MID_RIGHT = 70
         MOST_RIGHT = 50
 
-        robot.drive(speed)
+        robot.stopEngine()
         previous_state = (1,1,1)
+
+        def blink() :
+            for i in range (4) :
+                robot.feuxArriere.blinkAlert()
+        
+
 
         
         while True:
             robot.capteurSuiviLigne.printState()
             print("")
 
-            robot.drive(speed)
+            distanceObstacle = robot.tourelle.getDistance()
+            print(f"Distance obstacle : {distanceObstacle}mm")
+            if(distanceObstacle <= 150) :
+                
+                if(robot.moteur.current_speed != 0) :
+                    thread = threading.Thread(target=blink)
+                    thread.start()
+                    robot.stopEngine()
+
+                else :
+                    # robot.feuxAvant.warning()
+                    robot.feuxArriere.sequentialWarning()
+
+                continue
+            else :
+                robot.drive(speed)
+
             etat = robot.capteurSuiviLigne.getState()
 
             if(etat == (0,0,0)) : # Pas de ligne noire
@@ -123,16 +150,37 @@ class Robot :
             time.sleep(0.05)
             previous_state = etat
 
+    # distanceObstacle en millimètres
+    def analyseObstacle(self, distanceObstacle) :
+        matrice = self.tourelle.analyse()
 
+        for i in range(0,180,1) :
+            if(matrice[i] <= distanceObstacle) :
+                print(f"Angle {i}° : obstacle")
+                # self.turnTourelleXAxis(i)
+                # time.sleep(0.1)
+                # self.feuxAvant.appel_de_phares()
+            else :
+                print(f"Angle {i}° : libre")
+                continue
+    
 
 if __name__ == '__main__':
     robot = Robot()
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
+
     try:
-        robot.suiviLigne()
         # while True :
-        #     robot.feuxAvant.warning()
+        #     degre = int(input("Entrez un angle : "))
+        #     robot.turnTourelleXAxis(degre)
+        #     distanceObstacle = robot.tourelle.getDistance()
+        #     if(distanceObstacle <= 150) :
+        #         print(f"Obstacle à l'angle {degre}° : {distanceObstacle}mm")
+        robot.suiviLigne()
+        
+        
+        robot.analyseObstacle(150)
 
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
