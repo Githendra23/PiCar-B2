@@ -30,6 +30,9 @@ class Robot :
         self.moteur = Moteur.Moteur()
         self.tourelle = Tourelle.Tourelle()
 
+        self.sema_feux_arriere = threading.Semaphore(1)
+
+
     
     def bip(self) :
         self.buzzer.bip()
