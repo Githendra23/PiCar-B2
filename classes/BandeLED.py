@@ -4,7 +4,7 @@ import numpy
 from numpy import sin, cos, pi
 import time
 
-class FeuxArriere(threading.Thread):
+class BandeLED(threading.Thread):
     def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
@@ -17,7 +17,7 @@ class FeuxArriere(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(FeuxArriere, self).__init__(*args, **kwargs)
+        super(BandeLED, self).__init__(*args, **kwargs)
         self.__flag = threading.Event()
         self.__flag.clear()
     
@@ -199,73 +199,94 @@ class FeuxArriere(threading.Thread):
             r = rgb_max
             g = rgb_min
             b = rgb_max - rgb_adj
-        return [r, g, b] 
+        return [r, g, b]
+    
+    def police(self):
+        self.lightMode = 'police'
+        self.resume()
+        
+    def breath(self, R_input, G_input, B_input):
+        self.lightMode = 'breath'
+        self.colorBreathR = R_input
+        self.colorBreathG = G_input
+        self.colorBreathB = B_input
+        self.resume()    
             
     def resume(self):
         self.__flag.set()
-        
-    def setLed(self, led_num, colour = [255, 255, 255], brightness = 255):
+
+
+    def breathProcessing(self):
+        while self.lightMode == 'breath':
+            for i in range(0,self.breathSteps):
+                if self.lightMode != 'breath':
+                    break
+                self.set_all_led_color(self.colorBreathR*i/self.breathSteps, self.colorBreathG*i/self.breathSteps, self.colorBreathB*i/self.breathSteps)
+                #self.show()
+                time.sleep(0.03)
+            for i in range(0,self.breathSteps):
+                if self.lightMode != 'breath':
+                    break
+                self.set_all_led_color(self.colorBreathR-(self.colorBreathR*i/self.breathSteps), self.colorBreathG-(self.colorBreathG*i/self.breathSteps), self.colorBreathB-(self.colorBreathB*i/self.breathSteps))
+                #self.show()
+                time.sleep(0.03)
+    def policeProcessing(self):
+        while self.lightMode == 'police':
+            for i in range(0,3):
+                self.set_all_led_color_data(0,0,255)
+                self.show()
+                time.sleep(0.05)
+                self.set_all_led_color_data(0,0,0)
+                self.show()
+                time.sleep(0.05)
+            if self.lightMode != 'police':
+                break
+            time.sleep(0.1)
+            for i in range(0,3):
+                self.set_all_led_color_data(255,0,0)
+                self.show()
+                time.sleep(0.05)
+                self.set_all_led_color_data(0,0,0)
+                self.show()
+                time.sleep(0.05)
+            time.sleep(0.1)
+            
+            
+    def lightChange(self):
+        if self.lightMode == 'none':
+            self.pause()
+        elif self.lightMode == 'police':
+            self.policeProcessing()
+        elif self.lightMode == 'breath':
+            self.breathProcessing()    
+    
+    def run(self):
+        while 1:
+            self.__flag.wait()
+            self.lightChange()
+            pass
+
+    # Codé par Githendra
+    def set_led_color(self, led_num, colour = [255, 255, 255], brightness = 255):
         self.led_brightness = brightness
         self.set_led_color(led_num, colour[0], colour[1], colour[2])
         self.show()
-    
-    # Pour allumer toutes les leds arrières avec une couleur donnée et une luminosité donnée.
-    def setBackLeds(self, colour = [255, 255, 255], brightness = 255):
-        BACK_LED = [8, 9, 10, 11, 12, 13]
-        
-        for led_num in BACK_LED:
-            self.setLed(led_num, colour, brightness)
-            
-        self.show()
-    
-    # Éteint toutes les leds arrières.
-    def off(self):
-        self.setBackLeds([0, 0, 0], 255)
-    
-        
-    # Pour avoir un effet de clignotement des leds arrières,
-    # on allume les leds arrières avec une couleur donnée pendant un certain temps,
-    # puis on les éteint pendant le même temps.
-    def blinkAlert(self) :
-        color = [255, 0, 0]
-        delay = 0.125
-        self.setBackLeds(color,255)
-        time.sleep(delay)
-        self.setBackLeds([0, 0, 0],255)
-        time.sleep(delay)
-
-    # Pour avoir un effet de clignotement séquentiel des leds arrières,
-    # on allume les leds par couple (gauche/droite) avec un délai entre chaque couple.
-    def sequentialWarning(self) :
-        COUPLES_LED = [(8,13), (9,12), (10,11)]
-        
-        color = [255,128,0]
-
-        for left, right in COUPLES_LED:
-            self.setLed(left, color, 255)
-            self.setLed(right, color, 255)
-            time.sleep(0.1)
-
-        self.setBackLeds([0,0,0],255)
-        time.sleep(0.4)
 
 
-        
 if __name__ == '__main__':
+    import os
+    
+    print("spidev version is ", spidev.__version__)
+    print("spidev device as show:")
+    os.system("ls /dev/spi*")
+    
+    led = BandeLED(14, 255)            # Use MOSI for /dev/spidev0 to drive the lights
 
     try:
-        feuxArriere = FeuxArriere(14, 255)
-        
-        if feuxArriere.check_spi_state() != 0:
-            while True :
-                feuxArriere.sequentialWarning()
+        if led.check_spi_state() != 0:
+            led.set_led_color(2, [255, 0, 255],255)
+            time.sleep(7000)
         else:
-            print("Fin du main()")
-            
+            led.led_close()
     except KeyboardInterrupt:
-        print("Interruption via le clavier.")
-
-    finally :
-        feuxArriere.off()
-        feuxArriere.sequentialWarning()
-        feuxArriere.led_close()
+        led.led_close()
