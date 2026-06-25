@@ -88,6 +88,7 @@ class Moteur:
     def stop(self):
         print("Le moteur est à l'arrêt !")
         self.moteur.throttle = 0
+        self.current_speed = 0
 
     # Contrôle de traction, si les roues motrices patinent
     def TC(self, speed) :
