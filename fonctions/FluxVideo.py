@@ -1,8 +1,71 @@
 from picamera2 import Picamera2
 import cv2
+import numpy as np
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from RecoFleche import RecoFleche
 import threading
+
+
+# Paramètres pour la détection de ligne
+LINE_POS_1 = 200  # Position Y de la première ligne de scan
+LINE_POS_2 = 300  # Position Y de la deuxième ligne de scan
+THRESHOLD = 80    # Seuil de binarisation
+LINE_COLOR_SET = 255  # Couleur à détecter (255 pour blanc, 0 pour noir)
+
+
+def detecter_centres_ligne(image, threshold=THRESHOLD, line_pos_1=LINE_POS_1, line_pos_2=LINE_POS_2, line_color=LINE_COLOR_SET):
+    """
+    Détecte les centres sur deux lignes horizontales pour une ligne (colorée ou non).
+    
+    Args:
+        image: Image RGB ou BGR
+        threshold: Seuil pour la binarisation
+        line_pos_1: Position Y de la première ligne de scan
+        line_pos_2: Position Y de la deuxième ligne de scan
+        line_color: Couleur à détecter (255 pour blanc, 0 pour noir)
+    
+    Returns:
+        tuple: (center1, center2) où chaque centre est (x, y) ou None si non trouvé
+    """
+    # Convertir en niveaux de gris
+    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if image.shape[2] == 3 else image
+    
+    # Binarisation
+    _, binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+    
+    # Nettoyage
+    binary = cv2.erode(binary, None, iterations=2)
+    binary = cv2.dilate(binary, None, iterations=2)
+    
+    height, width = binary.shape
+    
+    # Initialisation des centres
+    center1 = None
+    center2 = None
+    
+    try:
+        # Ligne 1
+        if 0 <= line_pos_1 < height:
+            line_pixels = binary[line_pos_1]
+            color_indices = np.where(line_pixels == line_color)[0]
+            if len(color_indices) > 0:
+                left = color_indices[0] if len(color_indices) > 0 else 0
+                right = color_indices[-1] if len(color_indices) > 0 else width - 1
+                center1 = (int((left + right) / 2), line_pos_1)
+        
+        # Ligne 2
+        if 0 <= line_pos_2 < height:
+            line_pixels = binary[line_pos_2]
+            color_indices = np.where(line_pixels == line_color)[0]
+            if len(color_indices) > 0:
+                left = color_indices[0] if len(color_indices) > 0 else 0
+                right = color_indices[-1] if len(color_indices) > 0 else width - 1
+                center2 = (int((left + right) / 2), line_pos_2)
+                
+    except Exception as e:
+        print(f"Erreur dans detecter_centres_ligne: {e}")
+    
+    return center1, center2
 
 
 # Création de la caméra
@@ -65,8 +128,8 @@ class StreamingHandler(BaseHTTPRequestHandler):
             pass
 
 
-class RawStreamingHandler(BaseHTTPRequestHandler):
-    """Handler pour le flux brut, sans détection."""
+class SecondStreamingHandler(BaseHTTPRequestHandler):
+    """Handler pour le flux avec affichage des centres de ligne."""
     def do_GET(self):
         if self.path != "/":
             self.send_error(404)
@@ -85,7 +148,28 @@ class RawStreamingHandler(BaseHTTPRequestHandler):
         try:
             while True:
                 image = picam2.capture_array()
+                
+                # Détecter les centres sur la ligne
+                center1, center2 = detecter_centres_ligne(image)
+                
+                # Convertir en BGR pour OpenCV
                 image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                
+                # Dessiner les centres s'ils sont trouvés
+                if center1 is not None:
+                    cv2.circle(image_bgr, center1, 8, (0, 255, 0), -1)
+                    cv2.putText(image_bgr, "C1", (center1[0] + 15, center1[1]), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                
+                if center2 is not None:
+                    cv2.circle(image_bgr, center2, 8, (0, 0, 255), -1)
+                    cv2.putText(image_bgr, "C2", (center2[0] + 15, center2[1]), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                
+                # Dessiner les lignes de scan pour visualisation
+                cv2.line(image_bgr, (0, LINE_POS_1), (image_bgr.shape[1], LINE_POS_1), (255, 255, 0), 1)
+                cv2.line(image_bgr, (0, LINE_POS_2), (image_bgr.shape[1], LINE_POS_2), (255, 255, 0), 1)
+                
                 success, jpeg = cv2.imencode(".jpg", image_bgr)
 
                 if not success:
@@ -98,7 +182,8 @@ class RawStreamingHandler(BaseHTTPRequestHandler):
                 self.wfile.write(jpeg.tobytes())
                 self.wfile.write(b"\r\n")
 
-        except Exception:
+        except Exception as e:
+            print(f"Erreur dans SecondStreamingHandler: {e}")
             pass
 
 
@@ -110,17 +195,17 @@ def run_server(server, port):
 if __name__ == "__main__":
     try:
         serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
-        raw_serveur = HTTPServer(("0.0.0.0", 8001), RawStreamingHandler)
+        raw_serveur = HTTPServer(("0.0.0.0", 8001), SecondStreamingHandler)
 
         print("Serveurs lancés.")
-        print("Flux avec détection : http://10.101.2.116:8000")
-        print("Flux brut : http://10.101.2.116:8001")
+        print("Flux avec détection de flèches : http://10.101.2.116:8000")
+        print("Flux avec centres de ligne : http://10.101.2.116:8001")
 
-        # Lance les serveurs dans des threads séparés
+        # threads séparés
         threading.Thread(target=run_server, args=(serveur, 8000), daemon=True).start()
         threading.Thread(target=run_server, args=(raw_serveur, 8001), daemon=True).start()
 
-        # Garde le programme en vie
+        
         while True:
             pass
 
