@@ -252,7 +252,6 @@ class FeuxArriere(threading.Thread):
 
         
 if __name__ == '__main__':
-
     try:
         feuxArriere = FeuxArriere(14, 255)
         
