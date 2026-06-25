@@ -6,66 +6,68 @@ from RecoFleche import RecoFleche
 import threading
 
 
-# Paramètres pour la détection de ligne
-LINE_POS_1 = 200  # Position Y de la première ligne de scan
-LINE_POS_2 = 300  # Position Y de la deuxième ligne de scan
-THRESHOLD = 80    # Seuil de binarisation
-LINE_COLOR_SET = 255  # Couleur à détecter (255 pour blanc, 0 pour noir)
+# Paramètres pour la détection de ligne au sol (couleur rouge par défaut)
+COULEUR_LIGNE_MIN = (0, 100, 100)    # HSV min pour le rouge
+COULEUR_LIGNE_MAX = (10, 255, 255)   # HSV max pour le rouge
+MIN_CONTOUR_AREA = 500  # Surface minimale pour considérer un contour comme valide
 
 
-def detecter_centres_ligne(image, threshold=THRESHOLD, line_pos_1=LINE_POS_1, line_pos_2=LINE_POS_2, line_color=LINE_COLOR_SET):
+def detecter_centres_ligne_au_sol(image, couleur_min=COULEUR_LIGNE_MIN, couleur_max=COULEUR_LIGNE_MAX):
     """
-    Détecte les centres sur deux lignes horizontales pour une ligne (colorée ou non).
+    Détecte une ligne colorée au sol et retourne 2 points espacés verticalement.
     
     Args:
-        image: Image RGB ou BGR
-        threshold: Seuil pour la binarisation
-        line_pos_1: Position Y de la première ligne de scan
-        line_pos_2: Position Y de la deuxième ligne de scan
-        line_color: Couleur à détecter (255 pour blanc, 0 pour noir)
+        image: Image RGB
+        couleur_min: Plage HSV minimale pour la couleur de la ligne
+        couleur_max: Plage HSV maximale pour la couleur de la ligne
     
     Returns:
-        tuple: (center1, center2) où chaque centre est (x, y) ou None si non trouvé
+        tuple: (point_devant, point_derriere) où chaque point est (x, y) ou None
     """
-    # Convertir en niveaux de gris
-    gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if image.shape[2] == 3 else image
-    
-    # Binarisation
-    _, binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
-    
-    # Nettoyage
-    binary = cv2.erode(binary, None, iterations=2)
-    binary = cv2.dilate(binary, None, iterations=2)
-    
-    height, width = binary.shape
-    
-    # Initialisation des centres
-    center1 = None
-    center2 = None
-    
     try:
-        # Ligne 1
-        if 0 <= line_pos_1 < height:
-            line_pixels = binary[line_pos_1]
-            color_indices = np.where(line_pixels == line_color)[0]
-            if len(color_indices) > 0:
-                left = color_indices[0] if len(color_indices) > 0 else 0
-                right = color_indices[-1] if len(color_indices) > 0 else width - 1
-                center1 = (int((left + right) / 2), line_pos_1)
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        mask = cv2.inRange(hsv, couleur_min, couleur_max)
+        mask = cv2.erode(mask, None, iterations=2)
+        mask = cv2.dilate(mask, None, iterations=2)
         
-        # Ligne 2
-        if 0 <= line_pos_2 < height:
-            line_pixels = binary[line_pos_2]
-            color_indices = np.where(line_pixels == line_color)[0]
-            if len(color_indices) > 0:
-                left = color_indices[0] if len(color_indices) > 0 else 0
-                right = color_indices[-1] if len(color_indices) > 0 else width - 1
-                center2 = (int((left + right) / 2), line_pos_2)
-                
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if not contours:
+            return None, None
+        
+        largest_contour = max(contours, key=cv2.contourArea)
+        
+        if cv2.contourArea(largest_contour) < MIN_CONTOUR_AREA:
+            return None, None
+        
+        epsilon = 0.01 * cv2.arcLength(largest_contour, True)
+        approx = cv2.approxPolyDP(largest_contour, epsilon, True)
+        
+        points = approx.squeeze()
+        if len(points.shape) == 1:
+            points = points.reshape(-1, 2)
+        
+        if len(points) < 2:
+            return None, None
+        
+        y_coords = points[:, 1]
+        min_y_idx = np.argmin(y_coords)
+        max_y_idx = np.argmax(y_coords)
+        
+        point_devant = tuple(points[min_y_idx])
+        point_derriere = tuple(points[max_y_idx])
+        
+        if abs(point_devant[1] - point_derriere[1]) < 50:
+            sorted_points = points[np.argsort(points[:, 1])]
+            if len(sorted_points) >= 2:
+                point_devant = tuple(sorted_points[int(len(sorted_points) * 0.25)])
+                point_derriere = tuple(sorted_points[int(len(sorted_points) * 0.75)])
+        
+        return point_devant, point_derriere
+        
     except Exception as e:
-        print(f"Erreur dans detecter_centres_ligne: {e}")
-    
-    return center1, center2
+        print(f"Erreur dans detecter_centres_ligne_au_sol: {e}")
+        return None, None
 
 
 # Création de la caméra
@@ -149,26 +151,26 @@ class SecondStreamingHandler(BaseHTTPRequestHandler):
             while True:
                 image = picam2.capture_array()
                 
-                # Détecter les centres sur la ligne
-                center1, center2 = detecter_centres_ligne(image)
+                # Détecter les deux points sur la ligne au sol
+                point_devant, point_derriere = detecter_centres_ligne_au_sol(image)
                 
                 # Convertir en BGR pour OpenCV
                 image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
                 
-                # Dessiner les centres s'ils sont trouvés
-                if center1 is not None:
-                    cv2.circle(image_bgr, center1, 8, (0, 255, 0), -1)
-                    cv2.putText(image_bgr, "C1", (center1[0] + 15, center1[1]), 
+                # Dessiner les points s'ils sont trouvés
+                if point_devant is not None:
+                    cv2.circle(image_bgr, point_devant, 8, (0, 255, 0), -1)
+                    cv2.putText(image_bgr, "P1", (point_devant[0] + 15, point_devant[1]), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                 
-                if center2 is not None:
-                    cv2.circle(image_bgr, center2, 8, (0, 0, 255), -1)
-                    cv2.putText(image_bgr, "C2", (center2[0] + 15, center2[1]), 
+                if point_derriere is not None:
+                    cv2.circle(image_bgr, point_derriere, 8, (0, 0, 255), -1)
+                    cv2.putText(image_bgr, "P2", (point_derriere[0] + 15, point_derriere[1]), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
                 
-                # Dessiner les lignes de scan pour visualisation
-                cv2.line(image_bgr, (0, LINE_POS_1), (image_bgr.shape[1], LINE_POS_1), (255, 255, 0), 1)
-                cv2.line(image_bgr, (0, LINE_POS_2), (image_bgr.shape[1], LINE_POS_2), (255, 255, 0), 1)
+                # Dessiner la ligne entre les deux points pour visualisation
+                if point_devant is not None and point_derriere is not None:
+                    cv2.line(image_bgr, point_devant, point_derriere, (255, 255, 0), 2)
                 
                 success, jpeg = cv2.imencode(".jpg", image_bgr)
 
