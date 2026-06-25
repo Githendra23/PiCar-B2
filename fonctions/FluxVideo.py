@@ -6,36 +6,48 @@ from RecoFleche import RecoFleche
 import threading
 
 
-# Paramètres pour la détection de ligne au sol (couleur rouge par défaut)
-COULEUR_LIGNE_MIN = (0, 100, 100)    # HSV min pour le rouge
-COULEUR_LIGNE_MAX = (10, 255, 255)   # HSV max pour le rouge
+# Paramètres pour la détection de ligne au sol
+COULEUR_ROUGE_MIN = (0, 100, 100)
+COULEUR_ROUGE_MAX = (10, 255, 255)
+COULEUR_BLEU_MIN = (100, 100, 100)
+COULEUR_BLEU_MAX = (140, 255, 255)
 MIN_CONTOUR_AREA = 500  # Surface minimale pour considérer un contour comme valide
 
 
-def detecter_centres_ligne_au_sol(image, couleur_min=COULEUR_LIGNE_MIN, couleur_max=COULEUR_LIGNE_MAX):
+def detecter_centres_ligne_au_sol(image):
     """
-    Détecte une ligne colorée au sol et retourne 2 points espacés verticalement.
+    Détecte une ligne colorée au sol (rouge ou bleue, car la caméra inverse R/B)
+    et retourne 2 points espacés verticalement.
     
     Args:
         image: Image RGB
-        couleur_min: Plage HSV minimale pour la couleur de la ligne
-        couleur_max: Plage HSV maximale pour la couleur de la ligne
     
     Returns:
         tuple: (point_devant, point_derriere) où chaque point est (x, y) ou None
     """
     try:
-        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        mask = cv2.inRange(hsv, couleur_min, couleur_max)
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
+        image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
         
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        mask_rouge = cv2.inRange(hsv, COULEUR_ROUGE_MIN, COULEUR_ROUGE_MAX)
+        mask_bleu = cv2.inRange(hsv, COULEUR_BLEU_MIN, COULEUR_BLEU_MAX)
         
-        if not contours:
+        # Nettoyer les masques
+        mask_rouge = cv2.erode(mask_rouge, None, iterations=2)
+        mask_rouge = cv2.dilate(mask_rouge, None, iterations=2)
+        mask_bleu = cv2.erode(mask_bleu, None, iterations=2)
+        mask_bleu = cv2.dilate(mask_bleu, None, iterations=2)
+        
+        # Trouver les contours pour chaque couleur
+        contours_rouge, _ = cv2.findContours(mask_rouge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours_bleu, _ = cv2.findContours(mask_bleu, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Prendre le plus grand contour parmi les deux couleurs
+        all_contours = contours_rouge + contours_bleu
+        if not all_contours:
             return None, None
         
-        largest_contour = max(contours, key=cv2.contourArea)
+        largest_contour = max(all_contours, key=cv2.contourArea)
         
         if cv2.contourArea(largest_contour) < MIN_CONTOUR_AREA:
             return None, None
