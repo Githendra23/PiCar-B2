@@ -71,81 +71,81 @@ class Robot :
         MID_RIGHT = 70
         MOST_RIGHT = 50
 
-        robot.stopEngine()
+        self.stopEngine()
         previous_state = (1,1,1)
 
         # On définit une fonction ici pour le threading.
         # Elle ne servira pas ailleurs.
         def blink() :
             for i in range (4) :
-                robot.feuxArriere.blinkAlert()
+                self.feuxArriere.blinkAlert()
         
         while True:
-            robot.capteurSuiviLigne.printState()
+            self.capteurSuiviLigne.printState()
             print("")
 
-            distanceObstacle = robot.tourelle.getDistance()
+            distanceObstacle = self.tourelle.getDistance()
             print(f"Distance obstacle : {distanceObstacle}mm")
             if(distanceObstacle <= 150) :
                 
-                if(robot.moteur.current_speed != 0) :
+                if(self.moteur.current_speed != 0) :
                     thread = threading.Thread(target=blink)
                     thread.start()
-                    robot.stopEngine()
+                    self.stopEngine()
 
                 else :
                     # robot.feuxAvant.warning()
-                    robot.feuxArriere.sequentialWarning()
+                    self.feuxArriere.sequentialWarning()
 
                 continue
             else :
-                robot.drive(speed)
+                self.drive(speed)
 
-            etat = robot.capteurSuiviLigne.getState()
+            etat = self.capteurSuiviLigne.getState()
 
             if(etat == (0,0,0)) : # Pas de ligne noire
                 if(previous_state == (1,1,1)) :
                     time.sleep(0.75)
                 else :
-                    robot.reverse(reverse_speed)
+                    self.reverse(reverse_speed)
                     # time.sleep(0.2)  
 
             elif(etat == (1,0,0)) : # Virage fort à gauche
-                robot.stopEngine()
-                robot.direction.turn(MOST_RIGHT)
-                robot.reverse(15)
+                self.stopEngine()
+                self.direction.turn(MOST_RIGHT)
+                self.reverse(15)
                 time.sleep(0.25)
-                robot.direction.turn(MOST_LEFT)
-                robot.drive(15)
+                self.direction.turn(MOST_LEFT)
+                self.drive(15)
                 time.sleep(0.25)
-                robot.direction.reset()
+                self.direction.reset()
 
             elif(etat == (0,0,1)) : # Virage fort à droite
-                robot.stopEngine()
-                robot.direction.turn(MOST_LEFT)
-                robot.reverse(15)
+                self.stopEngine()
+                self.direction.turn(MOST_LEFT)
+                self.reverse(15)
                 time.sleep(0.25)
-                robot.direction.turn(MOST_RIGHT)
-                robot.drive(15)
+                self.direction.turn(MOST_RIGHT)
+                self.drive(15)
                 time.sleep(0.25)
-                robot.direction.reset()
+                self.direction.reset()
 
             elif(etat == (0,1,1)) :
                 angle = MID_RIGHT
-                robot.direction.turn(angle) # Tourner à droite de 20°
-                print(f"On tourne à droite de {abs(robot.direction.ANGLE_CENTER-angle)}°.")
+                self.direction.turn(angle) # Tourner à droite de 20°
+                print(f"On tourne à droite de {abs(self.direction.ANGLE_CENTER-angle)}°.")
                 time.sleep(0.2)
-                robot.direction.reset()
+                self.direction.reset()
 
             elif(etat == (1,1,1)) : # Ligne noire => aller tout droit
-                robot.drive(speed)
+                self.drive(speed)
 
             elif(etat == (1,1,0)) :
                 angle = MID_LEFT
-                robot.direction.turn(angle) # Tourner à gauche de 20°
-                print(f"On tourne à gauche de {abs(robot.direction.ANGLE_CENTER-angle)}°.")
+                self.direction.turn(angle) # Tourner à gauche de 20°
+                print(f"On tourne à gauche de {abs(self.direction.ANGLE_CENTER-angle)}°.")
                 time.sleep(0.2)
-                robot.direction.reset()
+                self.direction.reset()
 
             time.sleep(0.05)
             previous_state = etat
