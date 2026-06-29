@@ -22,7 +22,7 @@ class Robot :
         self.direction = Direction.Direction()
         
         self.feuxAvant = FeuxAvant.FeuxAvant()
-        self.feuxArriere = FeuxArriere.FeuxArriere(14, 255)
+        self.feuxArriere = FeuxArriere.setLed(14, 255)
         
         self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
         self.ledDroitBas = LEDDroitBas.LEDDroitBas()
@@ -32,8 +32,6 @@ class Robot :
 
         self.sema_feux_arriere = threading.Semaphore(1)
 
-
-    
     def bip(self) :
         self.buzzer.bip()
     
