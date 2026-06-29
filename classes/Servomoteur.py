@@ -1,12 +1,3 @@
-#!/usr/bin/env/python3
-'''
- SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
-# Import the PCA9685 module. Available in the bundle and here:
-#   https://github.com/adafruit/Adafruit_CircuitPython_PCA9685
-# sudo pip3 install adafruit-circuitpython-motor
-# sudo pip3 install adafruit-circuitpython-pca9685
-'''
 import time
 from board import SCL, SDA
 import busio
@@ -17,7 +8,6 @@ from adafruit_pca9685 import PCA9685
 DIRECTION = 0
 TOURELLE_X_AXIS = 1
 TOURELLE_Y_AXIS = 2
-
 
 
 class Servomoteur():
@@ -38,25 +28,20 @@ class Servomoteur():
 
     def setAngle(self, angle):
             self.servo.angle = angle
-
-    def sweep(self, start_angle=0, end_angle=180, step=1, delay=0.01):
-        for angle in range(start_angle, end_angle + 1, step):
-            self.setAngle(angle)
-            time.sleep(delay)
-
-        time.sleep(0.5)
-
-        for angle in range(end_angle, start_angle -1, -step):
-            self.setAngle(angle)
-            time.sleep(delay)
-
-        time.sleep(0.5)
-
-    def test(self, channel):
-        self.sweep(channel, start_angle=0, end_angle=180)
+    
+    def reset(self) :
+         self.setAngle(90)
 
 if __name__ == "__main__":
     servomoteur = Servomoteur(0)
     
-    while True:
-        servomoteur.sweep()
+    try :
+        while True:
+            servomoteur.setAngle(0);
+            time.sleep(1)
+            servomoteur.setAngle(180);
+            time.sleep(1)
+    except KeyboardInterrupt :
+        print("Fin du programme via le terminal.")
+    finally :
+        servomoteur.reset()
