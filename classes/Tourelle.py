@@ -36,7 +36,7 @@ class Tourelle:
             ValueError("Tourelle rotation Y - Angle hors de portée")
 
 
-    def analyse(self) :
+    def getMatrixObstacles(self) :
         matrice = []
         self.reset()
 
