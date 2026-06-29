@@ -74,12 +74,11 @@ class Robot :
         robot.stopEngine()
         previous_state = (1,1,1)
 
+        # On définit une fonction ici pour le threading.
+        # Elle ne servira pas ailleurs.
         def blink() :
             for i in range (4) :
                 robot.feuxArriere.blinkAlert()
-        
-
-
         
         while True:
             robot.capteurSuiviLigne.printState()
@@ -109,10 +108,9 @@ class Robot :
                     time.sleep(0.75)
                 else :
                     robot.reverse(reverse_speed)
-                    # time.sleep(0.2)
-                
+                    # time.sleep(0.2)  
 
-            elif(etat == (1,0,0)) : # Braquer à gauche
+            elif(etat == (1,0,0)) : # Virage fort à gauche
                 robot.stopEngine()
                 robot.direction.turn(MOST_RIGHT)
                 robot.reverse(15)
@@ -121,9 +119,8 @@ class Robot :
                 robot.drive(15)
                 time.sleep(0.25)
                 robot.direction.reset()
-                
 
-            elif(etat == (0,0,1)) : # Braquer à droite
+            elif(etat == (0,0,1)) : # Virage fort à droite
                 robot.stopEngine()
                 robot.direction.turn(MOST_LEFT)
                 robot.reverse(15)
@@ -155,14 +152,11 @@ class Robot :
 
     # distanceObstacle en millimètres
     def analyseObstacle(self, distanceObstacle) :
-        matrice = self.tourelle.analyse()
+        matriceObstacles = self.tourelle.getMatrixObstacles()
 
         for i in range(0,180,1) :
-            if(matrice[i] <= distanceObstacle) :
+            if(matriceObstacles[i] <= distanceObstacle) :
                 print(f"Angle {i}° : obstacle")
-                # self.turnTourelleXAxis(i)
-                # time.sleep(0.1)
-                # self.feuxAvant.appel_de_phares()
             else :
                 print(f"Angle {i}° : libre")
                 continue
@@ -172,19 +166,9 @@ if __name__ == '__main__':
     robot = Robot()
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
-
     try:
-        # while True :
-        #     degre = int(input("Entrez un angle : "))
-        #     robot.turnTourelleXAxis(degre)
-        #     distanceObstacle = robot.tourelle.getDistance()
-        #     if(distanceObstacle <= 150) :
-        #         print(f"Obstacle à l'angle {degre}° : {distanceObstacle}mm")
         robot.suiviLigne()
         
-        
-        robot.analyseObstacle(150)
-
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
     finally :
