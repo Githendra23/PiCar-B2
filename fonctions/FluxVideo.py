@@ -13,28 +13,35 @@ ROUGE_BAS_MIN = (0, 100, 100)
 ROUGE_BAS_MAX = (10, 255, 255)
 ROUGE_HAUT_MIN = (170, 100, 100)
 ROUGE_HAUT_MAX = (180, 255, 255)
-MIN_CONTOUR_AREA = 500  # Surface minimale pour considérer un contour comme valide
+MIN_CONTOUR_AREA = 500  # Surface minimale pour considerer un contour comme valide
+
+
+def corriger_couleurs(frame):
+    """
+    Convertit l'image fournie par picamera2 vers le BGR attendu par OpenCV.
+    Avec cette camera, les canaux R et B sont inverses -> on les remet dans l'ordre.
+    Cette conversion est faite UNE SEULE FOIS, juste apres la capture.
+    """
+    return cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
 
 def detecter_centres_ligne_au_sol(image_bgr):
     """
-    Détecte une ligne rouge au sol et retourne 2 points espacés verticalement.
+    Detecte une ligne rouge au sol et retourne 2 points espaces verticalement.
 
     Args:
-        image_bgr: Image au format BGR (celui fourni par picamera2 ici)
+        image_bgr: Image au format BGR (deja corrigee par corriger_couleurs)
 
     Returns:
-        tuple: (point_devant, point_derriere) où chaque point est (x, y) ou None
+        tuple: (point_devant, point_derriere) ou chaque point est (x, y) ou None
     """
     try:
-        # L'image est déjà en BGR -> conversion directe en HSV (pas de RGB2BGR)
         hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
 
         # Le rouge occupe deux plages de teinte en HSV : on combine les deux.
         mask_rouge = cv2.inRange(hsv, ROUGE_BAS_MIN, ROUGE_BAS_MAX) \
             + cv2.inRange(hsv, ROUGE_HAUT_MIN, ROUGE_HAUT_MAX)
 
-        # Nettoyer le masque (enlever le bruit, reboucher les trous)
         mask_rouge = cv2.erode(mask_rouge, None, iterations=2)
         mask_rouge = cv2.dilate(mask_rouge, None, iterations=2)
 
@@ -58,8 +65,8 @@ def detecter_centres_ligne_au_sol(image_bgr):
             return None, None
 
         y_coords = points[:, 1]
-        point_devant = tuple(points[np.argmin(y_coords)])    # point le plus haut
-        point_derriere = tuple(points[np.argmax(y_coords)])  # point le plus bas
+        point_devant = tuple(points[np.argmin(y_coords)])
+        point_derriere = tuple(points[np.argmax(y_coords)])
 
         if abs(point_devant[1] - point_derriere[1]) < 50:
             sorted_points = points[np.argsort(points[:, 1])]
@@ -74,13 +81,12 @@ def detecter_centres_ligne_au_sol(image_bgr):
         return None, None
 
 
-# Création de la caméra
+# Creation de la camera
 picam2 = Picamera2()
 
-# Création du détecteur de flèche
+# Creation du detecteur de fleche
 detecteur = RecoFleche()
 
-# Configuration du flux vidéo
 config = picam2.create_preview_configuration(
     main={
         "size": (640, 480),
@@ -93,7 +99,7 @@ picam2.start()
 
 
 class StreamingHandler(BaseHTTPRequestHandler):
-    """Handler pour le flux avec détection de flèches."""
+    """Handler pour le flux avec detection de fleches."""
     def do_GET(self):
         if self.path != "/":
             self.send_error(404)
@@ -108,14 +114,13 @@ class StreamingHandler(BaseHTTPRequestHandler):
 
         try:
             while True:
-                # picamera2 (RGB888) fournit déjà du BGR pour OpenCV
-                image_bgr = picam2.capture_array()
+                frame = picam2.capture_array()
+                image_bgr = corriger_couleurs(frame)   # couleurs remises dans l'ordre
+
                 image_bgr, direction = detecteur.detecter(image_bgr)
-
                 if direction != "Inconnue":
-                    print("Direction détectée :", direction)
+                    print("Direction detectee :", direction)
 
-                # Pas de conversion : on encode directement le BGR
                 success, jpeg = cv2.imencode(".jpg", image_bgr)
                 if not success:
                     continue
@@ -147,8 +152,8 @@ class SecondStreamingHandler(BaseHTTPRequestHandler):
 
         try:
             while True:
-                # Image déjà en BGR
-                image_bgr = picam2.capture_array()
+                frame = picam2.capture_array()
+                image_bgr = corriger_couleurs(frame)   # couleurs remises dans l'ordre
 
                 point_devant, point_derriere = detecter_centres_ligne_au_sol(image_bgr)
 
@@ -184,7 +189,7 @@ class SecondStreamingHandler(BaseHTTPRequestHandler):
 
 
 def run_server(server, port):
-    print(f"Serveur lancé sur le port {port}")
+    print(f"Serveur lance sur le port {port}")
     server.serve_forever()
 
 
@@ -193,19 +198,18 @@ if __name__ == "__main__":
         serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
         raw_serveur = HTTPServer(("0.0.0.0", 8001), SecondStreamingHandler)
 
-        print("Serveurs lancés.")
-        print("Flux avec détection de flèches : http://<IP_DU_PI>:8000")
+        print("Serveurs lances.")
+        print("Flux avec detection de fleches : http://<IP_DU_PI>:8000")
         print("Flux avec centres de ligne     : http://<IP_DU_PI>:8001")
 
         threading.Thread(target=run_server, args=(serveur, 8000), daemon=True).start()
         threading.Thread(target=run_server, args=(raw_serveur, 8001), daemon=True).start()
 
-        # Boucle d'attente (sans saturer le CPU comme le faisait 'while True: pass')
         while True:
             time.sleep(1)
 
     except KeyboardInterrupt:
-        print("Arrêt des serveurs")
+        print("Arret des serveurs")
 
     finally:
         picam2.stop()
