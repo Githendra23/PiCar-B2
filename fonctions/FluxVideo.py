@@ -4,79 +4,71 @@ import numpy as np
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from RecoFleche import RecoFleche
 import threading
+import time
 
 
 # Paramètres pour la détection de ligne au sol
-COULEUR_ROUGE_MIN = (0, 100, 100)
-COULEUR_ROUGE_MAX = (10, 255, 255)
-COULEUR_BLEU_MIN = (100, 100, 100)
-COULEUR_BLEU_MAX = (140, 255, 255)
+# Le rouge en HSV est à cheval sur 0 et 180, donc on utilise deux plages.
+ROUGE_BAS_MIN = (0, 100, 100)
+ROUGE_BAS_MAX = (10, 255, 255)
+ROUGE_HAUT_MIN = (170, 100, 100)
+ROUGE_HAUT_MAX = (180, 255, 255)
 MIN_CONTOUR_AREA = 500  # Surface minimale pour considérer un contour comme valide
 
 
-def detecter_centres_ligne_au_sol(image):
+def detecter_centres_ligne_au_sol(image_bgr):
     """
-    Détecte une ligne colorée au sol (rouge ou bleue, car la caméra inverse R/B)
-    et retourne 2 points espacés verticalement.
-    
+    Détecte une ligne rouge au sol et retourne 2 points espacés verticalement.
+
     Args:
-        image: Image RGB
-    
+        image_bgr: Image au format BGR (celui fourni par picamera2 ici)
+
     Returns:
         tuple: (point_devant, point_derriere) où chaque point est (x, y) ou None
     """
     try:
-        image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # L'image est déjà en BGR -> conversion directe en HSV (pas de RGB2BGR)
         hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
-        
-        mask_rouge = cv2.inRange(hsv, COULEUR_ROUGE_MIN, COULEUR_ROUGE_MAX)
-        mask_bleu = cv2.inRange(hsv, COULEUR_BLEU_MIN, COULEUR_BLEU_MAX)
-        
-        # Nettoyer les masques
+
+        # Le rouge occupe deux plages de teinte en HSV : on combine les deux.
+        mask_rouge = cv2.inRange(hsv, ROUGE_BAS_MIN, ROUGE_BAS_MAX) \
+            + cv2.inRange(hsv, ROUGE_HAUT_MIN, ROUGE_HAUT_MAX)
+
+        # Nettoyer le masque (enlever le bruit, reboucher les trous)
         mask_rouge = cv2.erode(mask_rouge, None, iterations=2)
         mask_rouge = cv2.dilate(mask_rouge, None, iterations=2)
-        mask_bleu = cv2.erode(mask_bleu, None, iterations=2)
-        mask_bleu = cv2.dilate(mask_bleu, None, iterations=2)
-        
-        # Trouver les contours pour chaque couleur
-        contours_rouge, _ = cv2.findContours(mask_rouge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours_bleu, _ = cv2.findContours(mask_bleu, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        # Prendre le plus grand contour parmi les deux couleurs
-        all_contours = contours_rouge + contours_bleu
-        if not all_contours:
+
+        contours, _ = cv2.findContours(
+            mask_rouge, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        if not contours:
             return None, None
-        
-        largest_contour = max(all_contours, key=cv2.contourArea)
-        
+
+        largest_contour = max(contours, key=cv2.contourArea)
         if cv2.contourArea(largest_contour) < MIN_CONTOUR_AREA:
             return None, None
-        
+
         epsilon = 0.01 * cv2.arcLength(largest_contour, True)
         approx = cv2.approxPolyDP(largest_contour, epsilon, True)
-        
+
         points = approx.squeeze()
         if len(points.shape) == 1:
             points = points.reshape(-1, 2)
-        
         if len(points) < 2:
             return None, None
-        
+
         y_coords = points[:, 1]
-        min_y_idx = np.argmin(y_coords)
-        max_y_idx = np.argmax(y_coords)
-        
-        point_devant = tuple(points[min_y_idx])
-        point_derriere = tuple(points[max_y_idx])
-        
+        point_devant = tuple(points[np.argmin(y_coords)])    # point le plus haut
+        point_derriere = tuple(points[np.argmax(y_coords)])  # point le plus bas
+
         if abs(point_devant[1] - point_derriere[1]) < 50:
             sorted_points = points[np.argsort(points[:, 1])]
             if len(sorted_points) >= 2:
                 point_devant = tuple(sorted_points[int(len(sorted_points) * 0.25)])
                 point_derriere = tuple(sorted_points[int(len(sorted_points) * 0.75)])
-        
+
         return point_devant, point_derriere
-        
+
     except Exception as e:
         print(f"Erreur dans detecter_centres_ligne_au_sol: {e}")
         return None, None
@@ -111,23 +103,20 @@ class StreamingHandler(BaseHTTPRequestHandler):
         self.send_header("Age", 0)
         self.send_header("Cache-Control", "no-cache, private")
         self.send_header("Pragma", "no-cache")
-        self.send_header(
-            "Content-Type",
-            "multipart/x-mixed-replace; boundary=FRAME"
-        )
+        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=FRAME")
         self.end_headers()
 
         try:
             while True:
-                image = picam2.capture_array()
-                image, direction = detecteur.detecter(image)
+                # picamera2 (RGB888) fournit déjà du BGR pour OpenCV
+                image_bgr = picam2.capture_array()
+                image_bgr, direction = detecteur.detecter(image_bgr)
 
                 if direction != "Inconnue":
                     print("Direction détectée :", direction)
 
-                image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                # Pas de conversion : on encode directement le BGR
                 success, jpeg = cv2.imencode(".jpg", image_bgr)
-
                 if not success:
                     continue
 
@@ -153,39 +142,32 @@ class SecondStreamingHandler(BaseHTTPRequestHandler):
         self.send_header("Age", 0)
         self.send_header("Cache-Control", "no-cache, private")
         self.send_header("Pragma", "no-cache")
-        self.send_header(
-            "Content-Type",
-            "multipart/x-mixed-replace; boundary=FRAME"
-        )
+        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=FRAME")
         self.end_headers()
 
         try:
             while True:
-                image = picam2.capture_array()
-                
-                # Détecter les deux points sur la ligne au sol
-                point_devant, point_derriere = detecter_centres_ligne_au_sol(image)
-                
-                # Convertir en BGR pour OpenCV
-                image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-                
-                # Dessiner les points s'ils sont trouvés
+                # Image déjà en BGR
+                image_bgr = picam2.capture_array()
+
+                point_devant, point_derriere = detecter_centres_ligne_au_sol(image_bgr)
+
                 if point_devant is not None:
                     cv2.circle(image_bgr, point_devant, 8, (0, 255, 0), -1)
-                    cv2.putText(image_bgr, "P1", (point_devant[0] + 15, point_devant[1]), 
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                
+                    cv2.putText(image_bgr, "P1",
+                                (point_devant[0] + 15, point_devant[1]),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
                 if point_derriere is not None:
                     cv2.circle(image_bgr, point_derriere, 8, (0, 0, 255), -1)
-                    cv2.putText(image_bgr, "P2", (point_derriere[0] + 15, point_derriere[1]), 
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-                
-                # Dessiner la ligne entre les deux points pour visualisation
+                    cv2.putText(image_bgr, "P2",
+                                (point_derriere[0] + 15, point_derriere[1]),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
                 if point_devant is not None and point_derriere is not None:
                     cv2.line(image_bgr, point_devant, point_derriere, (255, 255, 0), 2)
-                
-                success, jpeg = cv2.imencode(".jpg", image_bgr)
 
+                success, jpeg = cv2.imencode(".jpg", image_bgr)
                 if not success:
                     continue
 
@@ -212,16 +194,15 @@ if __name__ == "__main__":
         raw_serveur = HTTPServer(("0.0.0.0", 8001), SecondStreamingHandler)
 
         print("Serveurs lancés.")
-        print("Flux avec détection de flèches : http://10.101.2.116:8000")
-        print("Flux avec centres de ligne : http://10.101.2.116:8001")
+        print("Flux avec détection de flèches : http://<IP_DU_PI>:8000")
+        print("Flux avec centres de ligne     : http://<IP_DU_PI>:8001")
 
-        # threads séparés
         threading.Thread(target=run_server, args=(serveur, 8000), daemon=True).start()
         threading.Thread(target=run_server, args=(raw_serveur, 8001), daemon=True).start()
 
-        
+        # Boucle d'attente (sans saturer le CPU comme le faisait 'while True: pass')
         while True:
-            pass
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print("Arrêt des serveurs")
