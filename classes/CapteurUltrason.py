@@ -20,7 +20,7 @@ class CapteurUltrason:
     def afficher_distance(self) :
         print(f"Distance : {self.distance()}")
 
-    def alert(limite) :
+    def alert(self, limite) :
         if(self.distance() <= limite) :
             print("Obstacle détecté !!!")
 
