@@ -22,14 +22,14 @@ class Tourelle:
         
         self.capteurUltrason = CapteurUltrason.CapteurUltrason()
 
-    def turn_x_axis(self, angle):
+    def turnXAxis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
         else:
             ValueError("Tourelle rotation X - Angle hors de portée")
 
 
-    def turn_y_axis(self, angle):
+    def turnYAxis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_Y_AXIS, angle)
         else:
@@ -50,7 +50,7 @@ class Tourelle:
     def getDistance(self) :
         return self.capteurUltrason.distance()
 
-    def print_angle(self) :
+    def printAngles(self) :
         print(f"Angle X : ")
         print(f"Angle Y : ")
 
