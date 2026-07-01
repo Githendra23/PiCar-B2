@@ -17,8 +17,8 @@ class NavigationLabyrinthe:
         self.tourelle = Tourelle()
 
         # Angles de la tête
-        self.ANGLE_SCAN_MIN=60
-        self.ANGLE_SCAN_MAX=120
+        self.ANGLE_SCAN_MIN=30
+        self.ANGLE_SCAN_MAX=150
         self.ANGLE_TETE_CENTRE=88
         self.ANGLE_TETE_VERTICAL=90
 
@@ -146,6 +146,57 @@ class NavigationLabyrinthe:
 
         else:
             return "droite", meilleur_angle, meilleure_distance
+
+    def executer_choix(self, choix):
+        """
+        Exécute un manoeuvre selon le scan.
+        """
+
+        print(f"Avtion moteur : {choix}")
+
+        if choix == "centre":
+            # Avance tout droit brièvement
+            self.direction.reset()
+            time.sleep(0.2)
+
+            self.moteur.drive(self.VITESSE_AVANCE)
+            time.sleep(0.6)
+
+            self.moteur.stop()
+
+        elif choix == "gauche":
+            # Tourne les roues à gauche puis avance un peu
+            self.direction.turn(self.ANGLE_ROUES_GAUCHE)
+            time.sleep(0.2)
+
+            self.moteur.drive(self.VITESSE_MANOEUVRE)
+            time.sleep(0.7)
+
+            self.moteur.stop()
+            self.direction.reset()
+
+        elif choix == "droite":
+            # Tourne les roues à droite puis avance un peu
+            self.direction.turn(self.ANGLE_ROUES_DROITE)
+            time.sleep(0.2)
+
+            self.moteur.drive(self.VITESSE_MANOEUVRE)
+            time.sleep(0.7)
+
+            self.moteur.stop()
+            self.direction.reset()
+
+        else:
+            # Cas bloqué : on recule un peu
+            self.moteur.stop()
+            time.sleep(0.2)
+
+            self.direction.reset()
+            self.moteur.reverse(self.VITESSE_MANOEUVRE)
+            time.sleep(1)
+
+            self.moteur.stop()
+
 
     def afficher_scan_fluide(self, distances, choix, angle, distance):
         print("----- SCAN FLUIDE -----")

@@ -12,7 +12,13 @@ if __name__ == "__main__":
 
             navigation.afficher_scan_fluide(distances, choix, angle, distance)
 
-            time.sleep(1)
+            # input("Appuie sur Entrée pour exécuter l'action moteur")
+
+            navigation.executer_choix(choix)
+
+            # input("Appuie sur ENtrée pour refaire le scan")
+
+            time.sleep(0.3)
 
     except KeyboardInterrupt:
         print("Arrêt demandé par l'utilisateur")
