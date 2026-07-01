@@ -7,12 +7,12 @@ if __name__ == "__main__":
 
     try:
         while True:
-            distances = navigation.scanner_directions()
-            choix = navigation.choisir_direction(distances)
+            distances = navigation.scanner_fluide()
+            choix, angle, distance = navigation.choisir_angle_fluide(distances)
 
-            navigation.afficher_scan(distances, choix)
+            navigation.afficher_scan_fluide(distances, choix, angle, distance)
 
-            time.sleep(1.5)
+            time.sleep(1)
 
     except KeyboardInterrupt:
         print("Arrêt demandé par l'utilisateur")

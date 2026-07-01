@@ -17,10 +17,16 @@ class NavigationLabyrinthe:
         self.tourelle = Tourelle()
 
         # Angles de la tête
+        self.ANGLE_SCAN_MIN=60
+        self.ANGLE_SCAN_MAX=120
         self.ANGLE_TETE_CENTRE=88
-        self.ANGLE_TETE_GAUCHE=120
-        self.ANGLE_TETE_DROITE=65
         self.ANGLE_TETE_VERTICAL=90
+
+        self.PAS_SCAN=1
+        self.DELAI_BALAYAGE=0.015
+        self.MESURE_TOUS_LES_DEGRES=5
+
+        self.scan_vers_droite=True        
 
         # Angles des roues
         self.ANGLE_ROUES_CENTRE=90
@@ -88,18 +94,70 @@ class NavigationLabyrinthe:
 
         return self.lire_distance_stable()
     
-    def scanner_directions(self):
+    def scanner_fluide(self):
+        """
+        Balayage fluide entre 60° et 120°.
+        """
 
         distances = {}
 
-        distances["gauche"] = self.regarder_angle(self.ANGLE_TETE_GAUCHE)
-        distances["centre"] = self.regarder_angle(self.ANGLE_TETE_CENTRE)
-        distances["droite"] = self.regarder_angle(self.ANGLE_TETE_DROITE)
+        if self.scan_vers_droite:
+            angles = range(self.ANGLE_SCAN_MAX, self.ANGLE_SCAN_MIN - 1 , -self.PAS_SCAN)
 
-        self.tourelle.turn_x_axis(self.ANGLE_TETE_CENTRE)
-        time.sleep(0.2)
+        else:
+            angles = range(self.ANGLE_SCAN_MIN, self.ANGLE_SCAN_MAX + 1, self.PAS_SCAN)
+
+        for angle in angles:
+            self.tourelle.turn_x_axis(angle)
+
+            # On mesure seulement tous les X degrés pour éviter de ralentir le balayage
+            if angle % self.MESURE_TOUS_LES_DEGRES == 0 :
+                distance = self.tourelle.getDistance()
+
+                if distance is not None and 20 <= distance <= 2000:
+                    distances[angle] = distance
+                    print(f"Angle : {angle}° : {distance:.0f} mm")
+
+            time.sleep(self.DELAI_BALAYAGE)
+        
+        self.scan_vers_droite = not self.scan_vers_droite
 
         return distances
+
+    def choisir_angle_fluide(self, distances):
+        """
+        Choisit l'angle avec la plus grande distance.
+        """
+
+        if len(distances) == 0:
+            return "bloque", 90, 0
+
+        meilleur_angle = max(distances, key=distances.get)
+        meilleure_distance = distances[meilleur_angle]
+
+        if meilleure_distance < self.DISTANCE_STOP:
+            return "bloque", meilleur_angle, meilleure_distance
+
+        if 80 <= meilleur_angle <= 100:
+            return "centre", meilleur_angle, meilleure_distance
+
+        elif meilleur_angle > 100:
+            return "gauche", meilleur_angle, meilleure_distance
+
+        else:
+            return "droite", meilleur_angle, meilleure_distance
+
+    def afficher_scan_fluide(self, distances, choix, angle, distance):
+        print("----- SCAN FLUIDE -----")
+
+        for angle_scan, distance_scan in distances.items():
+            print(f"{angle_scan}° : {distance_scan:.0f} mm")
+
+        print(f"Choix : {choix}")
+        print(f"Angle choisi : {angle}°")
+        print(f"Distance : {distance:.0f} mm")
+        print("-----------------------")
+
     
     def choisir_direction(self, distances):
         """
