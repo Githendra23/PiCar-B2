@@ -1,27 +1,64 @@
 import time
 
+from FluxVideo import FluxVideo, demarrer_server_video, StabilisateurDirection
+from RecoFleche import RecoFleche
 from NavigationLabyrinthe import NavigationLabyrinthe
 
 if __name__ == "__main__":
     navigation = NavigationLabyrinthe()
 
+    flux = FluxVideo()
+    reco = RecoFleche()
+    stabilisateur = StabilisateurDirection(taille_historique=7, minimum_validation= 4)
+
+    server = None
+
     try:
+        flux.start()
+        server = demarrer_server_video(flux, port=8000)
+
         while True:
-            distances = navigation.scanner_fluide()
-            choix, angle, distance = navigation.choisir_angle_fluide(distances)
+            #1 Lecture caméra
+            image = flux.get_frame()
 
-            navigation.afficher_scan_fluide(distances, choix, angle, distance)
+            #2 Détection flèche
+            image_annotee, direction_detectee = reco.detecter(image)
 
-            # input("Appuie sur Entrée pour exécuter l'action moteur")
+            #3 Stabilisation de la direction
+            direction = stabilisateur.ajouter_direction(direction_detectee)
 
-            navigation.executer_choix(choix)
+            #4 Mise à jour du flux vidéo
+            flux.set_image_stream(image_annotee)
 
-            # input("Appuie sur ENtrée pour refaire le scan")
+            #5 Sécurité obstacle devant
+            distance_devant = navigation.lire_distance_stable()
+            print(f"Flèche : {direction} | Distance devant : {distance_devant:.0f} mm")
 
-            time.sleep(0.3)
+            if distance_devant <= navigation.DISTANCE_STOP:
+                print("Obstacle devant : sécurité obstacle")
+                navigation.executer_choix("bloqué")
+                time.sleep(0.2)
+                continue
+
+            #6 Action selon la flèche
+            if direction == "gauche":
+                navigation.executer_choix("gauche")
+
+            elif direction == "Droite":
+                navigation.executer_choix("droite")
+
+            else:
+                navigation.executer_choix("centre")
+
+            time.sleep(0.2)
 
     except KeyboardInterrupt:
         print("Arrêt demandé par l'utilisateur")
 
     finally:
+        if server is not None:
+            server.shutdown()
+            server.server_close()
+
+        flux.stop()
         navigation.arret_propre()

@@ -8,8 +8,8 @@ class RecoFleche:
         self.aire_min = 3000
 
         # Zone de détection : on ignore les bords de l'image
-        self.marge_x = 80
-        self.marge_y = 60
+        self.marge_x = 20
+        self.marge_y = 20
 
     def detecter(self, image):
 
