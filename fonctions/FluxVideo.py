@@ -12,6 +12,18 @@ ROUGE_HAUT_MIN = (170, 100, 100)
 ROUGE_HAUT_MAX = (180, 255, 255)
 MIN_CONTOUR_AREA = 500
 
+def obtenir_ip_locale():
+    """Retourne l'IP locale actuelle du Raspberry Pi (peu importe le reseau)."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))  # pas de vrai trafic envoye, juste pour choisir l'interface
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = "127.0.0.1"
+    finally:
+        s.close()
+    return ip
+
 
 def detecter_centres_ligne_au_sol(image_bgr):
     """Retourne 2 points (devant, derriere) sur la ligne, ou (None, None)."""
@@ -140,8 +152,10 @@ class StreamingHandler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     try:
         serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
-        print("Flux ligne + angle : http://<IP_DU_PI>:8000")
+        print(f"Flux ligne + angle : http://{obtenir_ip_locale()}:8000")
         serveur.serve_forever()
+
+        serveur.
     except KeyboardInterrupt:
         print("Arret")
     finally:
