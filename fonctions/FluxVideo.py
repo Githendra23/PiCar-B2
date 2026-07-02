@@ -4,6 +4,7 @@ import numpy as np
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import math
 import time
+import socket
 
 # Plages de detection du rouge en HSV (deux zones car le rouge est a cheval sur 0/180)
 ROUGE_BAS_MIN = (0, 100, 100)
@@ -154,7 +155,7 @@ if __name__ == "__main__":
         serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
         print(f"Flux ligne + angle : http://{obtenir_ip_locale()}:8000")
         serveur.serve_forever()
-        
+
     except KeyboardInterrupt:
         print("Arret")
     finally:
