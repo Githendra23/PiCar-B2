@@ -154,8 +154,7 @@ if __name__ == "__main__":
         serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
         print(f"Flux ligne + angle : http://{obtenir_ip_locale()}:8000")
         serveur.serve_forever()
-
-        serveur.
+        
     except KeyboardInterrupt:
         print("Arret")
     finally:
