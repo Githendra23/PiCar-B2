@@ -63,14 +63,14 @@ def calculer_angle(point_devant, point_derriere):
     """
     dx = point_devant[0] - point_derriere[0]
     dy = point_devant[1] - point_derriere[1]   # negatif car 'devant' est plus haut
-    # atan2(dx, -dy) : -dy pour que la verticale (vers le haut) donne 0
     angle = math.degrees(math.atan2(dx, -dy))
     return angle
 
 
 picam2 = Picamera2()
+# CORRECTION : Utilisation du format BGR888 natif pour eviter l'inversion des canaux rouge et bleu
 config = picam2.create_preview_configuration(
-    main={"size": (640, 480), "format": "RGB888"}
+    main={"size": (640, 480), "format": "BGR888"}
 )
 picam2.configure(config)
 picam2.start()
@@ -91,20 +91,17 @@ class StreamingHandler(BaseHTTPRequestHandler):
 
         try:
             while True:
-                # CORRECTION : sur cette camera, RGB888 fournit deja des donnees
-                # dans l'ordre BGR attendu par OpenCV. Aucune conversion couleur
-                # n'est necessaire (on a verifie : ajouter cvtColor faisait
-                # apparaitre le rouge en bleu -> c'etait une inversion en trop).
+                # L'image est capturee directement en BGR, prete pour OpenCV et imencode
                 image_bgr = picam2.capture_array()
 
                 point_devant, point_derriere = detecter_centres_ligne_au_sol(image_bgr)
 
                 if point_devant is not None and point_derriere is not None:
-                    # Points
+                    # Points (Ordre BGR : Vert=(0,255,0), Rouge=(0,0,255))
                     cv2.circle(image_bgr, point_devant, 8, (0, 255, 0), -1)
                     cv2.circle(image_bgr, point_derriere, 8, (0, 0, 255), -1)
 
-                    # Ligne qui suit l'orientation des 2 points
+                    # Ligne qui suit l'orientation des 2 points (Cyan=(255,255,0))
                     cv2.line(image_bgr, point_derriere, point_devant, (255, 255, 0), 3)
 
                     # Angle de la ligne
