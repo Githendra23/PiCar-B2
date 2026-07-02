@@ -91,7 +91,11 @@ class StreamingHandler(BaseHTTPRequestHandler):
 
         try:
             while True:
-                image_bgr = picam2.capture_array()
+                # CORRECTION : conversion RGB -> BGR faite ICI, une seule fois,
+                # juste apres la capture. C'est ce qui manquait : sans cette ligne,
+                # l'image restait en RGB alors que tout le reste du code (affichage
+                # ET detection de rouge) suppose du BGR -> d'ou le rendu bleute.
+                image_bgr = cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR)
 
                 point_devant, point_derriere = detecter_centres_ligne_au_sol(image_bgr)
 
