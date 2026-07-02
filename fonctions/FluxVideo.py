@@ -92,7 +92,7 @@ class StreamingHandler(BaseHTTPRequestHandler):
         try:
             while True:
                 # L'image est capturee directement en BGR, prete pour OpenCV et imencode
-                image_bgr = picam2.capture_array()
+                image_bgr = cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR)
 
                 point_devant, point_derriere = detecter_centres_ligne_au_sol(image_bgr)
 
