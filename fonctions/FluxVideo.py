@@ -238,7 +238,7 @@ if __name__ == "__main__":
     moteur = Moteur()
     direction = Direction()
     tourelle = Tourelle()
-    led = LedHAT()
+    led = FeuxArriere()
 
     led.setLed([0, 0, 0], 0)
 
