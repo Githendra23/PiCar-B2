@@ -6,6 +6,8 @@ import threading
 import math
 import time
 import socket
+import os
+import sys
 
 
 CHEMIN_CLASSES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "classes")
