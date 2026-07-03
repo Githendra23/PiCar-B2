@@ -243,7 +243,7 @@ if __name__ == "__main__":
     led.all_off()
 
     tourelle.reset()
-    tourelle.turn_y_axis(50)
+    tourelle.turn_y_axis(55)
 
     ligne_deja_detectee = False
 
