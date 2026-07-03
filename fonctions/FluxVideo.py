@@ -14,6 +14,7 @@ sys.path.append(CHEMIN_CLASSES)
 
 from Moteur import Moteur
 from Direction import Direction
+from Tourelle import Tourelle
 
 # Plages de detection du rouge en HSV (deux zones car le rouge est a cheval sur 0/180)
 ROUGE_BAS_MIN = (0, 100, 100)
@@ -231,6 +232,10 @@ if __name__ == "__main__":
 
     moteur = Moteur()
     direction = Direction()
+    tourelle = Tourelle()
+
+    tourelle.reset()
+    tourelle.set_x_axis(65)
 
     try:
         while True:
