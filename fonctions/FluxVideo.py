@@ -233,7 +233,7 @@ if __name__ == "__main__":
     # CONFIGURATION DU STREAMING
     # Pour desactiver le streaming et alleger le CPU, commentez la ligne ci-dessous.
     # =========================================================================
-    demarrer_streaming()
+    #demarrer_streaming()
     
     moteur = Moteur()
     direction = Direction()
