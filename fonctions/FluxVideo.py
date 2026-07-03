@@ -15,7 +15,7 @@ sys.path.append(CHEMIN_CLASSES)
 from Moteur import Moteur
 from Direction import Direction
 from Tourelle import Tourelle
-from LedHAT from LedHAT
+from LedHAT import LedHAT
 
 # Plages de detection du rouge en HSV
 ROUGE_BAS_MIN = (0, 100, 100)
