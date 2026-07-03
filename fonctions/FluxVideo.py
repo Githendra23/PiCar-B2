@@ -15,7 +15,7 @@ sys.path.append(CHEMIN_CLASSES)
 from Moteur import Moteur
 from Direction import Direction
 from Tourelle import Tourelle
-from LedHAT import LedHAT
+from FeuxArriere import FeuxArriere
 
 # Plages de detection du rouge en HSV
 ROUGE_BAS_MIN = (0, 100, 100)
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     tourelle = Tourelle()
     led = LedHAT()
 
-    led.all_off()
+    led.setLed([0, 0, 0], 0)
 
     tourelle.reset()
     tourelle.turn_y_axis(55)
