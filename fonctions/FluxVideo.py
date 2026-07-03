@@ -154,41 +154,67 @@ picam2.start()
 
 class StreamingHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        if self.path != "/":
-            self.send_error(404)
+        if self.path == "/":
+            # Reponse HTML pour encapsuler proprement le flux video
+            html = """
+            <html>
+                <head>
+                    <title>Moniteur de Trajectoire Robot</title>
+                    <style>
+                        body { font-family: monospace; text-align: center; background: #1a1a1a; color: #ffffff; margin: 0; padding: 20px; }
+                        h1 { color: #00ff00; margin-bottom: 10px; }
+                        .container { display: inline-block; background: #2a2a2a; padding: 15px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+                        img { max-width: 100%; height: auto; border: 2px solid #444; display: block; }
+                        .info { margin-top: 10px; font-size: 14px; color: #aaa; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Retour Video & Télémétrie</h1>
+                    <div class="container">
+                        <img src="/stream.mjpg" />
+                        <div class="info">Résolution: 640x480 | Format: BGR888 Natif</div>
+                    </div>
+                </body>
+            </html>
+            """
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(html)))
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
             return
 
-        self.send_response(200)
-        self.send_header("Age", 0)
-        self.send_header("Cache-Control", "no-cache, private")
-        self.send_header("Pragma", "no-cache")
-        self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=FRAME")
-        self.end_headers()
+        elif self.path == "/stream.mjpg":
+            self.send_response(200)
+            self.send_header("Age", 0)
+            self.send_header("Cache-Control", "no-cache, private")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=FRAME")
+            self.end_headers()
 
-        try:
-            while True:
-                with verrou:
-                    jpeg = etat_partage["jpeg"]
-                if jpeg is None:
-                    time.sleep(0.05)
-                    continue
-                self.wfile.write(b"--FRAME\r\n")
-                self.send_header("Content-Type", "image/jpeg")
-                self.send_header("Content-Length", str(len(jpeg)))
-                self.end_headers()
-                self.wfile.write(jpeg.tobytes())
-                self.wfile.write(b"\r\n")
-                time.sleep(0.03)
-        except Exception:
-            pass
-
-    def log_message(self, *args):
-        pass
+            try:
+                while True:
+                    with verrou:
+                        jpeg = etat_partage["jpeg"]
+                    if jpeg is None:
+                        time.sleep(0.01)
+                        continue
+                    self.wfile.write(b"--FRAME\r\n")
+                    self.send_header("Content-Type", "image/jpeg")
+                    self.send_header("Content-Length", str(len(jpeg)))
+                    self.end_headers()
+                    self.wfile.write(jpeg.tobytes())
+                    self.wfile.write(b"\r\n")
+                    time.sleep(0.03)  # Limitation a environ 30 FPS pour stabiliser la bande passante
+            except Exception:
+                pass
+        else:
+            self.send_error(404)
 
 
 def lancer_serveur_web():
     serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
-    print(f"Flux video : http://{obtenir_ip_locale()}:8000")
+    print(f"Interface d'observation disponible a l'adresse : http://{obtenir_ip_locale()}:8000")
     serveur.serve_forever()
 
 
@@ -200,6 +226,7 @@ def publier(image_bgr):
 
 
 if __name__ == "__main__":
+    # Initialisation du thread d'infrastructure web
     threading.Thread(target=lancer_serveur_web, daemon=True).start()
 
     moteur = Moteur()
@@ -240,7 +267,7 @@ if __name__ == "__main__":
                 direction.turn(int(angle_cible))
                 moteur.drive(VITESSE)
 
-                # Incrustations graphiques pour le diagnostic
+                # Incrustations graphiques pour le diagnostic en direct sur le serveur web
                 cv2.line(image_bgr, (CENTRE_IMAGE, 0), (CENTRE_IMAGE, 480), (0, 255, 0), 1)
                 cv2.line(image_bgr, pt_derriere, pt_devant, (0, 0, 255), 2)
                 cv2.circle(image_bgr, pt_devant, 6, (0, 255, 255), -1)   # Point lointain (Jaune)
@@ -275,6 +302,7 @@ if __name__ == "__main__":
                     cv2.putText(image_bgr, f"Mode degrade - Err: {erreur_position}",
                                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 165, 255), 2)
 
+            # Envoi systematique de l'image modifiee au tampon de diffusion web
             publier(image_bgr)
 
     except KeyboardInterrupt:
