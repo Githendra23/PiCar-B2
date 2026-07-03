@@ -16,7 +16,7 @@ from Moteur import Moteur
 from Direction import Direction
 from Tourelle import Tourelle
 
-# Plages de detection du rouge en HSV (deux zones car le rouge est a cheval sur 0/180)
+# Plages de detection du rouge en HSV
 ROUGE_BAS_MIN = (0, 100, 100)
 ROUGE_BAS_MAX = (10, 255, 255)
 ROUGE_HAUT_MIN = (170, 100, 100)
@@ -26,27 +26,27 @@ MIN_CONTOUR_AREA = 500
 # Ruban BLEU (arret)
 BLEU_MIN = (100, 100, 100)
 BLEU_MAX = (130, 255, 255)
-BLEU_AIRE_ARRET = 3000      # surface bleue minimale pour declencher l'arret
-BLEU_ZONE_BAS = 300         # on ne regarde le bleu que sous cette ligne (proche du robot)
+BLEU_AIRE_ARRET = 3000      
+BLEU_ZONE_BAS = 300         
 
-# Parametres de pilotage (coefficients modifiables pour l'asservissement)
-CENTRE_IMAGE = 320          # l'axe median du robot dans la capture 640x480
-ZONE_MORTE = 40             # marge d'erreur admissible en pixels
-GAIN_POSITION = 0.15        # correction proportionnelle a l'ecart lateral (point bas)
-GAIN_ANGLE = 0.40           # correction preventive basee sur l'inclinaison du virage (degres)
-SENS_SERVO = 1              # coefficient d'inversion de la commande de direction (1 ou -1)
-VITESSE = 30                # consigne de vitesse lineaire moteurs
+# Parametres de pilotage
+CENTRE_IMAGE = 320          
+ZONE_MORTE = 40             
+GAIN_POSITION = 0.15        
+GAIN_ANGLE = 0.40           
+SENS_SERVO = 1              
+VITESSE = 30                
 
-# Etat partage pour le flux web (le web ne fait que regarder)
+# Gestion du streaming et de l'etat partage
+streaming_actif = False
 etat_partage = {"jpeg": None}
 verrou = threading.Lock()
 
 
 def obtenir_ip_locale():
-    """Retourne l'IP locale actuelle du Raspberry Pi (peu importe le reseau)."""
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s = socket.socket(socket.AF_INET, socket.socket.SOCK_DGRAM)
     try:
-        s.connect(("8.8.8.8", 80))  # pas de vrai trafic envoye, juste pour choisir l'interface
+        s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
     except Exception:
         ip = "127.0.0.1"
@@ -56,7 +56,6 @@ def obtenir_ip_locale():
 
 
 def detecter_centres_ligne_au_sol(image_bgr):
-    """Retourne 2 points (devant, derriere) sur la ligne, ou (None, None)."""
     try:
         hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, ROUGE_BAS_MIN, ROUGE_BAS_MAX) \
@@ -81,8 +80,8 @@ def detecter_centres_ligne_au_sol(image_bgr):
             return None, None
 
         y = points[:, 1]
-        point_devant = tuple(points[np.argmin(y)])    # le plus haut dans l'image (loointain)
-        point_derriere = tuple(points[np.argmax(y)])  # le plus bas dans l'image (proche des roues)
+        point_devant = tuple(points[np.argmin(y)])    
+        point_derriere = tuple(points[np.argmax(y)])  
 
         if abs(point_devant[1] - point_derriere[1]) < 50:
             tries = points[np.argsort(points[:, 1])]
@@ -97,7 +96,6 @@ def detecter_centres_ligne_au_sol(image_bgr):
 
 
 def position_ligne_rouge(image_bgr):
-    """Retourne la position x du centre de la ligne rouge, ou None."""
     hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, ROUGE_BAS_MIN, ROUGE_BAS_MAX) \
         + cv2.inRange(hsv, ROUGE_HAUT_MIN, ROUGE_HAUT_MAX)
@@ -118,10 +116,9 @@ def position_ligne_rouge(image_bgr):
 
 
 def bleu_proche(image_bgr):
-    """Retourne True si une zone bleue suffisante est proche (bas de l'image)."""
     hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, BLEU_MIN, BLEU_MAX)
-    mask[:BLEU_ZONE_BAS, :] = 0          # on ignore le haut de l'image
+    mask[:BLEU_ZONE_BAS, :] = 0          
     mask = cv2.erode(mask, None, iterations=2)
     mask = cv2.dilate(mask, None, iterations=2)
 
@@ -133,14 +130,8 @@ def bleu_proche(image_bgr):
 
 
 def calculer_angle(point_devant, point_derriere):
-    """
-    Angle de la ligne par rapport a la verticale (en degres).
-      0  = ligne droite devant
-      >0 = ligne penche a droite
-      <0 = ligne penche a gauche
-    """
     dx = point_devant[0] - point_derriere[0]
-    dy = point_devant[1] - point_derriere[1]   # negatif car 'devant' est plus haut dans le repere image
+    dy = point_devant[1] - point_derriere[1]   
     angle = math.degrees(math.atan2(dx, -dy))
     return angle
 
@@ -156,7 +147,6 @@ picam2.start()
 class StreamingHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/":
-            # Reponse HTML pour encapsuler proprement le flux video
             html = """
             <html>
                 <head>
@@ -206,7 +196,7 @@ class StreamingHandler(BaseHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(jpeg.tobytes())
                     self.wfile.write(b"\r\n")
-                    time.sleep(0.03)  # Limitation a environ 30 FPS pour stabiliser la bande passante
+                    time.sleep(0.03)  
             except Exception:
                 pass
         else:
@@ -219,7 +209,18 @@ def lancer_serveur_web():
     serveur.serve_forever()
 
 
+def demarrer_streaming():
+    """Active le flag de capture et initialise le serveur HTTP dans un thread separe."""
+    global streaming_actif
+    streaming_actif = True
+    threading.Thread(target=lancer_serveur_web, daemon=True).start()
+
+
 def publier(image_bgr):
+    """Effectue l'encodage JPEG uniquement si le streaming a ete explicitement active."""
+    if not streaming_actif:
+        return
+        
     success, jpeg = cv2.imencode(".jpg", image_bgr)
     if success:
         with verrou:
@@ -227,9 +228,12 @@ def publier(image_bgr):
 
 
 if __name__ == "__main__":
-    # Initialisation du thread d'infrastructure web
-    threading.Thread(target=lancer_serveur_web, daemon=True).start()
-
+    # =========================================================================
+    # CONFIGURATION DU STREAMING
+    # Pour desactiver le streaming et alleger le CPU, commentez la ligne ci-dessous.
+    # =========================================================================
+    demarrer_streaming()
+    
     moteur = Moteur()
     direction = Direction()
     tourelle = Tourelle()
@@ -237,30 +241,32 @@ if __name__ == "__main__":
     tourelle.reset()
     tourelle.turn_y_axis(50)
 
+    ligne_deja_detectee = False
+
     try:
         while True:
             image_bgr = cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR)
 
-            # 1) PRIORITE : ruban bleu proche -> on s'arrete et on termine
+            # 1) PRIORITE CRITIQUE : detection du ruban bleu
             if bleu_proche(image_bgr):
                 moteur.stop()
                 direction.reset()
-                cv2.putText(image_bgr, "STOP (bleu detecte)", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+                if streaming_actif:
+                    cv2.putText(image_bgr, "STOP (bleu detecte)", (10, 30),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
                 publier(image_bgr)
-                print("Ruban bleu detecte -> arret")
+                print("Ruban bleu détecté -> Arrêt immédiat de la séquence")
                 break
 
-            # 2) Suivi de la ligne rouge par analyse multi-points (Position + Angle)
+            # 2) Analyse de la ligne rouge
             pt_devant, pt_derriere = detecter_centres_ligne_au_sol(image_bgr)
 
             if pt_devant is not None and pt_derriere is not None:
-                # Ecart de trajectoire immediat base sur le point au sol le plus bas
+                ligne_deja_detectee = True
+
                 erreur_position = pt_derriere[0] - CENTRE_IMAGE
-                # Inclinaison de la ligne par rapport a la verticale du robot
                 angle_ligne = calculer_angle(pt_devant, pt_derriere)
 
-                # Loi de commande combinee
                 if abs(erreur_position) < ZONE_MORTE and abs(angle_ligne) < 5:
                     angle_cible = direction.getAngleCenter()
                 else:
@@ -272,23 +278,20 @@ if __name__ == "__main__":
                 direction.turn(int(angle_cible))
                 moteur.drive(VITESSE)
 
-                # Incrustations graphiques pour le diagnostic en direct sur le serveur web
-                cv2.line(image_bgr, (CENTRE_IMAGE, 0), (CENTRE_IMAGE, 480), (0, 255, 0), 1)
-                cv2.line(image_bgr, pt_derriere, pt_devant, (0, 0, 255), 2)
-                cv2.circle(image_bgr, pt_devant, 6, (0, 255, 255), -1)   # Point lointain (Jaune)
-                cv2.circle(image_bgr, pt_derriere, 6, (255, 0, 255), -1) # Point proche (Magenta)
-                cv2.putText(image_bgr, f"Err: {erreur_position} Ang: {int(angle_ligne)}deg Dir: {int(angle_cible)}",
-                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                if streaming_actif:
+                    cv2.line(image_bgr, (CENTRE_IMAGE, 0), (CENTRE_IMAGE, 480), (0, 255, 0), 1)
+                    cv2.line(image_bgr, pt_derriere, pt_devant, (0, 0, 255), 2)
+                    cv2.circle(image_bgr, pt_devant, 6, (0, 255, 255), -1)   
+                    cv2.circle(image_bgr, pt_derriere, 6, (255, 0, 255), -1) 
+                    cv2.putText(image_bgr, f"Nominal - Err: {erreur_position} Ang: {int(angle_ligne)}deg",
+                                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
             else:
-                # STRATEGIE DE REPLI : Traitement par position seule si la segmentation par points echoue
+                # 3) STRATEGIE DE REPLI NIVEAU 1 : Mode degrade
                 x_ligne = position_ligne_rouge(image_bgr)
 
-                if x_ligne is None:
-                    moteur.stop()
-                    cv2.putText(image_bgr, "Ligne non detectee", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
-                else:
+                if x_ligne is not None:
+                    ligne_deja_detectee = True
                     erreur_position = x_ligne - CENTRE_IMAGE
 
                     if abs(erreur_position) < ZONE_MORTE:
@@ -301,13 +304,29 @@ if __name__ == "__main__":
                     direction.turn(int(angle_cible))
                     moteur.drive(VITESSE)
 
-                    # Incrustations graphiques mode degrade
-                    cv2.line(image_bgr, (CENTRE_IMAGE, 0), (CENTRE_IMAGE, 480), (0, 255, 0), 1)
-                    cv2.circle(image_bgr, (x_ligne, 400), 8, (0, 165, 255), -1)
-                    cv2.putText(image_bgr, f"Mode degrade - Err: {erreur_position}",
-                                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 165, 255), 2)
+                    if streaming_actif:
+                        cv2.line(image_bgr, (CENTRE_IMAGE, 0), (CENTRE_IMAGE, 480), (0, 255, 0), 1)
+                        cv2.circle(image_bgr, (x_ligne, 400), 8, (0, 165, 255), -1)
+                        cv2.putText(image_bgr, f"Degrade - Err: {erreur_position}",
+                                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 165, 255), 2)
 
-            # Envoi systematique de l'image modifiee au tampon de diffusion web
+                else:
+                    # 4) STRATEGIE DE REPLI NIVEAU 2 : Perte totale de contact visuel
+                    if ligne_deja_detectee:
+                        angle_recherche = direction.getAngleCenter()  
+                        direction.turn(int(angle_recherche))
+                        moteur.drive(-VITESSE)
+
+                        if streaming_actif:
+                            cv2.putText(image_bgr, "PERTE LIGNE : RECUL DROIT", (10, 30),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 127, 255), 2)
+                        print("Alerte : Ligne perdue. Manœuvre de recherche automatique (Recul en ligne droite).")
+                    else:
+                        moteur.stop()
+                        if streaming_actif:
+                            cv2.putText(image_bgr, "En attente du repere rouge initial", (10, 30),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+
             publier(image_bgr)
 
     except KeyboardInterrupt:
