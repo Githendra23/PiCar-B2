@@ -22,7 +22,7 @@ class Robot :
         self.direction = Direction.Direction()
         
         self.feuxAvant = FeuxAvant.FeuxAvant()
-        self.feuxArriere = FeuxArriere.setLed(14, 255)
+        self.feuxArriere = FeuxArriere.FeuxArriere()
         
         self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
         self.ledDroitBas = LEDDroitBas.LEDDroitBas()
@@ -155,16 +155,101 @@ class Robot :
             time.sleep(0.05)
             previous_state = etat
 
-    # distanceObstacle en millimètres
-    def analyseObstacle(self, distanceObstacle) :
-        matriceObstacles = self.tourelle.getMatrixObstacles()
+    def blackLineDetected(self) :
+        etat = self.capteurSuiviLigne.getState()
+        if(etat != (0,0,0)) :
+            return True
+        return False
 
-        for i in range(0,180,1) :
-            if(matriceObstacles[i] <= distanceObstacle) :
-                print(f"Angle {i}° : obstacle")
-            else :
-                print(f"Angle {i}° : libre")
+    def getLargestFreeBand(self, matrix, distanceAlerte) :
+        minAngle = 0
+        maxAngle = 0
+        ecart = maxAngle - minAngle
+
+        if(self.tourelle.clearAround(matrix, distanceAlerte)) :
+            return 0, 180
+
+
+        for i in range(len(matrix)) :
+            if(matrix[i] <= distanceAlerte) : # Si la distance stockée est <= la limite, on skip
                 continue
+
+            for j in range(i,len(matrix)) :
+                if(matrix[j] <= distanceAlerte) :
+                    tmpMin = i
+                    tmpMax = j-1
+                    if(tmpMax - tmpMin >= ecart) :
+                        minAngle = tmpMin
+                        maxAngle = tmpMax
+                        ecart = maxAngle - minAngle
+                    break
+
+        return minAngle, maxAngle
+
+    # distanceObstacle en millimètres
+    def analyseObstacle(self) :
+        MOST_LEFT = 140
+        MOST_RIGHT = 40
+        distanceAlerte = 200
+        speed = 15
+        self.tourelle.reset() # On centre la tourelle
+
+        while True :
+            self.stopEngine()
+
+            matriceObstacles = self.tourelle.getMatrixObstacles()
+
+            for i in range(len(matriceObstacles)) :
+                if(matriceObstacles[i] <= distanceAlerte) :
+                    print(f"Angle {i}° : obstacle : {matriceObstacles[i]}mm")
+            
+            self.tourelle.reset()
+
+            minAngle, maxAngle = self.getLargestFreeBand(matriceObstacles, distanceAlerte)
+            if(minAngle == maxAngle) :
+                print("Pépin !")
+                # return
+                maxAngle = 180
+            print(f"Min : {minAngle}° et Max : {maxAngle}")
+
+            angleBraquage = (maxAngle + minAngle) / 2
+            if(angleBraquage <= 30) :
+                angleBraquage = 30
+            elif(angleBraquage >= 140) :
+                angleBraquage = 140
+            self.direction.turn(angleBraquage)
+            print(f"On tourne de {angleBraquage}°")
+
+            forwardTime = 0
+            while(not(self.blackLineDetected()) and (forwardTime < 2)) :
+                self.drive(speed)
+                forwardTime = forwardTime + 0.1
+                time.sleep(0.1)
+
+            etat = self.capteurSuiviLigne.getState()
+            if(self.blackLineDetected()) :
+                
+                if(etat == (0,0,1)) :
+                    self.direction.turn(MOST_LEFT)
+                elif(etat == (0,1,1)) :
+                    self.direction.turn(MOST_LEFT)
+                elif(etat == (1,1,1)) :
+                    self.stopEngine()
+                    self.direction.turn(MOST_RIGHT)
+                    self.reverse(10)
+                    time.sleep(2)
+                    self.direction.reset()
+                    self.stopEngine()
+                elif(etat == (1,1,0)) :
+                    self.direction.turn(MOST_RIGHT)
+                elif(etat == (1,0,0)) :
+                    self.direction.turn(MOST_RIGHT)
+                
+                time.sleep(2)
+
+            self.direction.reset()
+
+
     
 
 if __name__ == '__main__':
@@ -172,12 +257,18 @@ if __name__ == '__main__':
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
-        robot.suiviLigne()
+        robot.analyseObstacle()
+        
+        # while True :
+        #     angleX = int(input("Angle : "))
+        #     robot.tourelle.turnXAxis(angleX)
+        #     distanceObstacle = robot.tourelle.getDistance()
+        #     print(f"Obstacle : {distanceObstacle}mm")
         
     except KeyboardInterrupt:
         print("Fin du programme via le clavier.")
     finally :
+        robot.stopEngine()
         robot.direction.reset()
         robot.feuxAvant.off()
         robot.resetTourelle()
-        robot.stopEngine()
