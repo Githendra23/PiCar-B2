@@ -319,7 +319,7 @@ if __name__ == "__main__":
                     if ligne_deja_detectee:
                         angle_recherche = direction.getAngleCenter()  
                         direction.turn(int(angle_recherche))
-                        moteur.drive(-VITESSE)
+                        moteur.reverse(VITESSE)
 
                         if streaming_actif:
                             cv2.putText(image_bgr, "PERTE LIGNE : RECUL DROIT", (10, 30),
