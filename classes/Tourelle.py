@@ -28,27 +28,44 @@ class Tourelle:
         else:
             ValueError("Tourelle rotation X - Angle hors de portée")
 
-
     def turnYAxis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_Y_AXIS, angle)
         else:
             ValueError("Tourelle rotation Y - Angle hors de portée")
 
+    def obstacleNearby(self, matrix, distanceAlerte) :
+        for i in range(len(matrix)) :
+            if(matrix[i] <= distanceAlerte) :
+                return True
+            
+        return False
 
     def getMatrixObstacles(self) :
         matrice = []
+        # anglesDetection = [0,45,90,135,180]
         self.reset()
 
-        for i in range (0,180,1) :
-            self.turn_x_axis(i)
-            matrice.append(self.capteurUltrason.distance())
+        self.turnXAxis(0)
+        time.sleep(1)
+        for angle in range(0,180) :
+            self.turnXAxis(angle)
+            print(f"Angle : {angle}°")
             time.sleep(0.01)
+
+            matrice.append(self.capteurUltrason.distance())
         
         return matrice
 
     def getDistance(self) :
         return self.capteurUltrason.distance()
+
+    def clearAround(self, matrix, distanceAlerte) :
+        for i in range(len(matrix)) :
+            if(matrix[i] <= distanceAlerte) :
+                return False
+        return True
+
 
     def printAngles(self) :
         print(f"Angle X : ")
@@ -61,8 +78,8 @@ class Tourelle:
         return self.ANGLE_MIN
 
     def reset(self):
-        self.turn_x_axis(90)
-        self.turn_y_axis(90)
+        self.turnXAxis(90)
+        self.turnYAxis(90)
 
 
 if __name__ == "__main__" :
@@ -72,12 +89,9 @@ if __name__ == "__main__" :
         # x_angle = int(input("Entrez l'angle sur l'axe X : "))
         # y_angle = int(input("Entrez l'angle sur l'axe Y : "))
 
-        # tourelle.turn_x_axis(x_angle)
-        # tourelle.turn_y_axis(y_angle)
+        # tourelle.turnXAxis(x_angle)
+        # tourelle.turnYAxis(y_angle)
         # # tourelle.print_angle()
-
-        tourelle.analyse(250)
-        time.sleep(2)
         
         tourelle.reset()
         time.sleep(1)
