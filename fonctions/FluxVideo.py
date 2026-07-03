@@ -240,7 +240,8 @@ if __name__ == "__main__":
     tourelle = Tourelle()
     led = FeuxArriere()
 
-    led.setLed([0, 0, 0], 0)
+    led.set_led_brightness(0)
+    led.set_all_led_rgb([0, 0, 0])
 
     tourelle.reset()
     tourelle.turn_y_axis(55)
