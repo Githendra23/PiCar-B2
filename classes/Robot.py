@@ -5,10 +5,10 @@ import Batterie
 import Buzzer
 import CapteurSuiviLigne
 import Direction
-import FeuxAvant
-import FeuxArriere
-import LEDDroitBas
-import LEDGaucheBas
+import classes.self_components.FeuxAvant as FeuxAvant
+import classes.self_components.FeuxArriere as FeuxArriere
+import classes.self_components.LEDDroitBas as LEDDroitBas
+import classes.self_components.LEDGaucheBas as LEDGaucheBas
 import Moteur
 import Tourelle
 
