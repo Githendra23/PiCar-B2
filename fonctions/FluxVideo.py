@@ -35,7 +35,7 @@ ZONE_MORTE = 40             # marge d'erreur admissible en pixels
 GAIN_POSITION = 0.15        # correction proportionnelle a l'ecart lateral (point bas)
 GAIN_ANGLE = 0.40           # correction preventive basee sur l'inclinaison du virage (degres)
 SENS_SERVO = 1              # coefficient d'inversion de la commande de direction (1 ou -1)
-VITESSE = 25                # consigne de vitesse lineaire moteurs
+VITESSE = 50                # consigne de vitesse lineaire moteurs
 
 # Etat partage pour le flux web (le web ne fait que regarder)
 etat_partage = {"jpeg": None}
