@@ -2,9 +2,17 @@ from picamera2 import Picamera2
 import cv2
 import numpy as np
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
 import math
 import time
 import socket
+
+
+CHEMIN_CLASSES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "classes")
+sys.path.append(CHEMIN_CLASSES)
+
+from Moteur import Moteur
+from Direction import Direction
 
 # Plages de detection du rouge en HSV (deux zones car le rouge est a cheval sur 0/180)
 ROUGE_BAS_MIN = (0, 100, 100)
@@ -12,6 +20,24 @@ ROUGE_BAS_MAX = (10, 255, 255)
 ROUGE_HAUT_MIN = (170, 100, 100)
 ROUGE_HAUT_MAX = (180, 255, 255)
 MIN_CONTOUR_AREA = 500
+
+# Ruban BLEU (arret)
+BLEU_MIN = (100, 100, 100)
+BLEU_MAX = (130, 255, 255)
+BLEU_AIRE_ARRET = 3000      # surface bleue minimale pour declencher l'arret
+BLEU_ZONE_BAS = 300         # on ne regarde le bleu que sous cette ligne (proche du robot)
+
+# Parametres de pilotage (a ajuster au test)
+CENTRE_IMAGE = 320          # 640 / 2 : l'axe du robot dans l'image
+ZONE_MORTE = 40             # marge d'erreur (px) : en dessous -> robot considere centre
+GAIN = 0.15                 # force du braquage (plus grand = braque plus fort)
+SENS_SERVO = 1              # 1 ou -1 : a inverser si le robot braque du mauvais cote
+VITESSE = 25                # vitesse d'avance (faible : transmission fragile)
+
+# Etat partage pour le flux web (le web ne fait que regarder)
+etat_partage = {"jpeg": None}
+verrou = threading.Lock()
+
 
 def obtenir_ip_locale():
     """Retourne l'IP locale actuelle du Raspberry Pi (peu importe le reseau)."""
@@ -67,6 +93,42 @@ def detecter_centres_ligne_au_sol(image_bgr):
         return None, None
 
 
+def position_ligne_rouge(image_bgr):
+    """Retourne la position x du centre de la ligne rouge, ou None."""
+    hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, ROUGE_BAS_MIN, ROUGE_BAS_MAX) \
+        + cv2.inRange(hsv, ROUGE_HAUT_MIN, ROUGE_HAUT_MAX)
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+    largest = max(contours, key=cv2.contourArea)
+    if cv2.contourArea(largest) < MIN_CONTOUR_AREA:
+        return None
+
+    M = cv2.moments(largest)
+    if M["m00"] == 0:
+        return None
+    return int(M["m10"] / M["m00"])
+
+
+def bleu_proche(image_bgr):
+    """Retourne True si une zone bleue suffisante est proche (bas de l'image)."""
+    hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, BLEU_MIN, BLEU_MAX)
+    mask[:BLEU_ZONE_BAS, :] = 0          # on ignore le haut de l'image
+    mask = cv2.erode(mask, None, iterations=2)
+    mask = cv2.dilate(mask, None, iterations=2)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return False
+    largest = max(contours, key=cv2.contourArea)
+    return cv2.contourArea(largest) > BLEU_AIRE_ARRET
+
+
 def calculer_angle(point_devant, point_derriere):
     """
     Angle de la ligne par rapport a la verticale (en degres).
@@ -104,59 +166,94 @@ class StreamingHandler(BaseHTTPRequestHandler):
 
         try:
             while True:
-                # L'image est capturee directement en BGR, prete pour OpenCV et imencode
-                image_bgr = cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR)
-
-                point_devant, point_derriere = detecter_centres_ligne_au_sol(image_bgr)
-
-                if point_devant is not None and point_derriere is not None:
-                    # Points (Ordre BGR : Vert=(0,255,0), Rouge=(0,0,255))
-                    cv2.circle(image_bgr, point_devant, 8, (0, 255, 0), -1)
-                    cv2.circle(image_bgr, point_derriere, 8, (0, 0, 255), -1)
-
-                    # Ligne qui suit l'orientation des 2 points (Cyan=(255,255,0))
-                    cv2.line(image_bgr, point_derriere, point_devant, (255, 255, 0), 3)
-
-                    # Angle de la ligne
-                    angle = calculer_angle(point_devant, point_derriere)
-                    cv2.putText(image_bgr, f"Angle: {angle:.1f} deg",
-                                (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                                0.8, (255, 255, 255), 2)
-
-                    # Indication de direction
-                    if angle > 10:
-                        sens = "-> DROITE"
-                    elif angle < -10:
-                        sens = "<- GAUCHE"
-                    else:
-                        sens = "TOUT DROIT"
-                    cv2.putText(image_bgr, sens, (10, 65),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
-                else:
-                    cv2.putText(image_bgr, "Ligne non detectee", (10, 30),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-
-                success, jpeg = cv2.imencode(".jpg", image_bgr)
-                if not success:
+                with verrou:
+                    jpeg = etat_partage["jpeg"]
+                if jpeg is None:
+                    time.sleep(0.05)
                     continue
-
                 self.wfile.write(b"--FRAME\r\n")
                 self.send_header("Content-Type", "image/jpeg")
                 self.send_header("Content-Length", str(len(jpeg)))
                 self.end_headers()
                 self.wfile.write(jpeg.tobytes())
                 self.wfile.write(b"\r\n")
+                time.sleep(0.03)
         except Exception:
             pass
 
+    def log_message(self, *args):
+        pass
+
+
+def lancer_serveur_web():
+    serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
+    print(f"Flux video : http://{obtenir_ip_locale()}:8000")
+    serveur.serve_forever()
+
+
+def publier(image_bgr):
+    success, jpeg = cv2.imencode(".jpg", image_bgr)
+    if success:
+        with verrou:
+            etat_partage["jpeg"] = jpeg
+
 
 if __name__ == "__main__":
+    # Le serveur web tourne dans son propre thread (independant du controle)
+    threading.Thread(target=lancer_serveur_web, daemon=True).start()
+
+    moteur = Moteur()
+    direction = Direction()
+
     try:
-        serveur = HTTPServer(("0.0.0.0", 8000), StreamingHandler)
-        print(f"Flux ligne + angle : http://{obtenir_ip_locale()}:8000")
-        serveur.serve_forever()
+        while True:
+            # Partie camera IDENTIQUE a ton code d'origine (couleur inchangee)
+            image_bgr = cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR)
+
+            # 1) PRIORITE : ruban bleu proche -> on s'arrete et on termine
+            if bleu_proche(image_bgr):
+                moteur.stop()
+                direction.reset()
+                cv2.putText(image_bgr, "STOP (bleu detecte)", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+                publier(image_bgr)
+                print("Ruban bleu detecte -> arret")
+                break
+
+            # 2) Suivi de la ligne rouge
+            x_ligne = position_ligne_rouge(image_bgr)
+
+            if x_ligne is None:
+                # Ligne perdue -> arret de securite
+                moteur.stop()
+                cv2.putText(image_bgr, "Ligne non detectee", (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+            else:
+                erreur = x_ligne - CENTRE_IMAGE
+
+                if abs(erreur) < ZONE_MORTE:
+                    # Dans la marge -> tout droit
+                    angle = direction.getAngleCenter()
+                else:
+                    # Braquage proportionnel a l'ecart pour recentrer la ligne
+                    angle = direction.getAngleCenter() - SENS_SERVO * (erreur * GAIN)
+                    angle = max(direction.getAngleMin(),
+                                min(direction.getAngleMax(), angle))
+
+                direction.turn(int(angle))
+                moteur.drive(VITESSE)
+
+                # Affichage debug sur le flux
+                cv2.line(image_bgr, (CENTRE_IMAGE, 0), (CENTRE_IMAGE, 480), (0, 255, 0), 1)
+                cv2.circle(image_bgr, (x_ligne, 400), 8, (0, 0, 255), -1)
+                cv2.putText(image_bgr, f"erreur: {erreur}  angle: {int(angle)}",
+                            (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+            publier(image_bgr)
 
     except KeyboardInterrupt:
-        print("Arret")
+        print("Arret manuel")
     finally:
+        moteur.destroy()
+        direction.reset()
         picam2.stop()
