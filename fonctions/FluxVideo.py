@@ -44,7 +44,8 @@ verrou = threading.Lock()
 
 
 def obtenir_ip_locale():
-    s = socket.socket(socket.AF_INET, socket.socket.SOCK_DGRAM)
+    socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
     try:
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
