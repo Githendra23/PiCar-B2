@@ -235,7 +235,7 @@ if __name__ == "__main__":
     tourelle = Tourelle()
 
     tourelle.reset()
-    tourelle.set_x_axis(65)
+    tourelle.turn_y_axis(65)
 
     try:
         while True:
