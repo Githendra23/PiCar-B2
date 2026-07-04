@@ -48,12 +48,14 @@ class Feux :
         self.feuxArriere.off()
         time.sleep(BLINK_DELAY)
 
+    def appelDePhares(self) :
+        self.feuxAvant.appel_de_phares()
 
 if __name__ == "__main__" :
     feux = Feux()
     try :
         while True :
-            feux.warnings()
+            feux.appelDePhares()
     except KeyboardInterrupt :
         print("Interruption via le clavier.")
     finally :
