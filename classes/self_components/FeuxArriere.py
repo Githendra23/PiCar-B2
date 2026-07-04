@@ -218,6 +218,26 @@ class FeuxArriere(threading.Thread):
             
         self.show()
     
+    def blinkerLeft(self) :
+        LEDS = [8,9,10]
+        
+        color = [255,128,0]
+
+        for left in LEDS:
+            self.setLed(left, color, 255)
+            time.sleep(0.1)
+        self.off()
+    
+    def blinkerRight(self) :
+        LEDS = [13,12,11]
+        
+        color = [255,128,0]
+
+        for right in LEDS:
+            self.setLed(right, color, 255)
+            time.sleep(0.1)
+        self.off()
+
     # Éteint toutes les leds arrières.
     def off(self):
         self.setBackLeds([0, 0, 0], 255)
@@ -262,7 +282,10 @@ if __name__ == '__main__':
         
         if feuxArriere.check_spi_state() != 0:
             while True :
-                feuxArriere.sequentialWarnings()
+                feuxArriere.blinkerLeft()
+                time.sleep(0.5)
+                feuxArriere.blinkerRight()
+                time.sleep(0.5)
         else:
             print("Fin du main()")
             
