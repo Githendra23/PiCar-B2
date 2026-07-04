@@ -237,7 +237,7 @@ class FeuxArriere(threading.Thread):
     # Pour avoir un effet de clignotement séquentiel des leds arrières,
     # on allume les leds par couple (gauche/droite) avec un délai entre chaque couple.
     def sequentialWarnings(self) :
-        self.sequentialWarningOn()
+        self.sequentialWarningsOn()
 
         self.setBackLeds([0,0,0],255)
         time.sleep(0.3)    
@@ -258,7 +258,7 @@ if __name__ == '__main__':
         
         if feuxArriere.check_spi_state() != 0:
             while True :
-                feuxArriere.sequentialWarning()
+                feuxArriere.sequentialWarnings()
         else:
             print("Fin du main()")
             
@@ -267,5 +267,4 @@ if __name__ == '__main__':
 
     finally :
         feuxArriere.off()
-        feuxArriere.sequentialWarning()
         feuxArriere.led_close()
