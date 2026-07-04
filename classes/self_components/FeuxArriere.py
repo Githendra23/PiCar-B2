@@ -5,7 +5,7 @@ from numpy import sin, cos, pi
 import time
 
 class FeuxArriere(threading.Thread):
-    def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
+    def __init__(self, count = 14, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
         self.set_led_brightness(bright)
@@ -218,31 +218,30 @@ class FeuxArriere(threading.Thread):
             
         self.show()
     
-    def blinkerLeft(self) :
+    def blinkerLeft(self, delay) :
         LEDS = [8,9,10]
         
         color = [255,128,0]
 
         for left in LEDS:
             self.setLed(left, color, 255)
-            time.sleep(0.1)
+            time.sleep(delay)
         self.off()
     
-    def blinkerRight(self) :
+    def blinkerRight(self, delay) :
         LEDS = [13,12,11]
         
         color = [255,128,0]
 
         for right in LEDS:
             self.setLed(right, color, 255)
-            time.sleep(0.1)
+            time.sleep(delay)
         self.off()
 
     # Éteint toutes les leds arrières.
     def off(self):
         self.setBackLeds([0, 0, 0], 255)
     
-        
     # Pour avoir un effet de clignotement des leds arrières,
     # on allume les leds arrières avec une couleur donnée pendant un certain temps,
     # puis on les éteint pendant le même temps.
@@ -262,7 +261,22 @@ class FeuxArriere(threading.Thread):
         self.setBackLeds([0,0,0],255)
         time.sleep(0.3)    
 
-    def sequentialWarningsOn(self) :
+    def sequentialLeftOn(self, color) :
+        LEDS = [8,9,10]
+        
+        for left in LEDS:
+            self.setLed(left, color, 255)
+            time.sleep(0.1)
+    
+    def sequentialRightOn(self, color) :
+        LEDS = [13,12,11]
+        
+        for right in LEDS:
+            self.setLed(right, color, 255)
+            time.sleep(0.1)
+        
+
+    def sequentialOn(self, color) :
         COUPLES_LED = [(8,13), (9,12), (10,11)]
         
         color = [255,128,0]
@@ -282,10 +296,12 @@ if __name__ == '__main__':
         
         if feuxArriere.check_spi_state() != 0:
             while True :
-                feuxArriere.blinkerLeft()
-                time.sleep(0.5)
-                feuxArriere.blinkerRight()
-                time.sleep(0.5)
+                color = [255,128,0]
+                feuxArriere.sequentialLeftOn(color)
+                feuxArriere.sequentialRightOn(color)
+                time.sleep(1)
+                feuxArriere.off()
+                time.sleep(1)
         else:
             print("Fin du main()")
             
@@ -293,5 +309,4 @@ if __name__ == '__main__':
         print("Interruption via le clavier.")
 
     finally :
-        feuxArriere.off()
-        feuxArriere.led_close()
+        feuxArriere.close()
