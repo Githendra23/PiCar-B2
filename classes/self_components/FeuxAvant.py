@@ -113,7 +113,7 @@ class FeuxAvant():
         print("╚═══════════════════════════╝")
     
     # Clignotant gauche
-    def blinker_left(self) :
+    def blinkerLeft(self) :
         # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
         delay = 0.5
 
@@ -126,7 +126,7 @@ class FeuxAvant():
         time.sleep(delay)
 
     # Clignotant droit
-    def blinker_right(self) :
+    def blinkerRight(self) :
         # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
         delay = 0.4
         
