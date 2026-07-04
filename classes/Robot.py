@@ -32,6 +32,7 @@ class Robot :
 
         self.sema_feux_arriere = threading.Semaphore(1)
 
+
     def bip(self) :
         self.buzzer.bip()
     
@@ -57,7 +58,19 @@ class Robot :
         self.tourelle.turn_y_axis(angle)
         
     def blinkAlert(self) :
-        thread = threading.Thread(target=self.feuxArriere.blinkAlert)
+        for i in range (4) :
+            self.feuxArriere.blinkAlert()
+
+    def warnings(self) :
+        self.feuxAvant.warningsOn()
+        self.feuxArriere.sequentialWarningsOn()
+        time.sleep(0.3)
+        self.feuxAvant.off()
+        self.feuxArriere.off()
+        time.sleep(0.3)
+
+    def pushOnThread(self, functionName) :
+        thread = threading.Thread(target=functionName)
         thread.start()
 
 
@@ -70,13 +83,9 @@ class Robot :
         MOST_RIGHT = 50
 
         self.stopEngine()
+        self.tourelle.reset()
         previous_state = (1,1,1)
 
-        # On définit une fonction ici pour le threading.
-        # Elle ne servira pas ailleurs.
-        def blink() :
-            for i in range (4) :
-                self.feuxArriere.blinkAlert()
         
         while True:
             self.capteurSuiviLigne.printState()
@@ -84,18 +93,16 @@ class Robot :
 
             distanceObstacle = self.tourelle.getDistance()
             print(f"Distance obstacle : {distanceObstacle}mm")
-            if(distanceObstacle <= 150) :
+            if(distanceObstacle <= 150) : # Si un obstacle est détecté
                 
-                if(self.moteur.current_speed != 0) :
-                    thread = threading.Thread(target=blink)
-                    thread.start()
+                if(self.moteur.current_speed != 0) : # Si la voiture n'est pas encore arrêtée
                     self.stopEngine()
+                    self.blinkAlert()
 
-                else :
-                    # robot.feuxAvant.warning()
-                    self.feuxArriere.sequentialWarning()
+                else : # Si la voiture s'est arrêtée
+                    self.warnings()
 
-                continue
+                continue # Pour ne pas traiter les cas de détection de ligne en-dessous
             else :
                 self.drive(speed)
 
