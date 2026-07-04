@@ -6,11 +6,6 @@ import ServoController
 ANGLE_MAX = 180
 ANGLE_MIN = 0
 
-############################
-# AJOUTER LA LOGIQUE DU CAPTEUR ULTRASON
-# AJOUTER LES TRUCS POUR LA CAMÉRA
-############################
-
 class Tourelle:
     def __init__(self):
         self.CHANNEL_X_AXIS = 1 # horizontal

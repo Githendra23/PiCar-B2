@@ -1,42 +1,69 @@
-# Adeept PiCar-B for RPi
-Adeept PiCar-B is an open source intelligent robotics product for artificial intelligence, robotics enthusiasts and students. This product is based on the Raspberry Pi motherboard using the python language and is compatible with the following Raspberry Pi models: 3B,3B+,4,5, etc.
+# Adeept PiCar-B2 — Robot Autonome Suiveur de Ligne
 
+**Projet Mastercamp Systèmes Embarqués — EFREI Paris**
 
-## Resources Links
+Ce projet consiste à programmer un robot mobile autonome basé sur un **Raspberry Pi 4** et le kit **Adeept PiCar-B2**. Le robot est capable de se centrer sur une ligne rouge au sol, de la suivre par vision par ordinateur, de détecter des flèches directionnelles pour choisir sa trajectoire, et de s'arrêter automatiquement devant un ruban bleu. L'ensemble est piloté par une architecture logicielle orientée objet, avec un retour vidéo en temps réel accessible via une interface web.
 
-[RobotName]: Adeept PiCar-B \
-[Item Code]: ADR012 \
-[Official Raspberry Pi website]: https://www.raspberrypi.org/downloads/    \
-[Official website]:  https://www.adeept.com/     \
-[Web Source Code]: https://github.com/adeept/Adeept_Bot_Controller_WebUI.git
+## Technologies utilisées
 
+**Langage & Vision :**
 
-## Getting Support or Providing Advice
+<a href="https://docs.python.org/3/" target="_blank"><img src="https://img.icons8.com/color/48/000000/python--v1.png"/></a>
+<a href="https://docs.opencv.org/" target="_blank"><img src="https://img.icons8.com/color/48/000000/opencv.png"/></a>
+<a href="https://numpy.org/doc/" target="_blank"><img src="https://img.icons8.com/color/48/000000/numpy.png"/></a>
 
-Adeept provides free and responsive product and technical support, including but not limited to:   
-* Product quality issues 
-* Product use and build issues
-* Questions regarding the technology employed in our products for learning and education
-* Your input and opinions are always welcome
+**Matériel :**
 
-We also encourage your ideas and suggestions for new products and product improvements
-For any of the above, you may send us an email to:     \
-Technical support: support@adeept.com      \
-Customer Service: service@adeept.com
+<a href="https://www.raspberrypi.com/documentation/" target="_blank"><img src="https://img.icons8.com/color/48/000000/raspberry-pi.png"/></a>
+<a href="https://www.linux.org" target="_blank"><img src="https://img.icons8.com/color/48/000000/linux--v1.png"/></a>
 
+**Communication matérielle :** I2C (PCA9685), SPI (WS2812), picamera2
 
-## About Adeept
+## Fonctionnalités principales
 
-Adeept was founded in 2015 and is a company dedicated to open source hardware and STEM education services. The Adeept technical team continuously develops new technologies, uses excellent products as technology and service carriers, and provides comprehensive tutorials and after-sales technical support to help users combine learning with entertainment. The main products include various learning kits and robots for Arduino, Raspberry Pi, ESP32 and BBC micro:bit.    \
-Adeept is committed to assist customers in their education of robotics, programming and electronic circuits so that they may transform their creative ideas into prototypes and new and innovative products. To this end, our services include but are not limited to:   
-* Educational and Entertaining Project Kits for Robots, Smart Cars and Drones
-* Educational Kits to Learn Robotic Software Systems for Arduino, Raspberry Pi and micro: bit
-* Electronic Component Assortments, Electronic Modules and Specialized Tools
-* Product Development and Customization Services
+#### Vision (module FluxVideo)
+- Détection de la ligne rouge par masquage HSV et analyse de contours.
+- Calcul de la position latérale et de l'angle de la ligne (deux points de repère).
+- Détection du ruban bleu d'arrêt dans la zone proche du robot.
+- Retour vidéo annoté diffusé en direct via un serveur web (flux MJPEG).
 
+#### Pilotage (module main)
+- Centrage automatique du robot sur la ligne, avec zone morte pour éviter les oscillations.
+- Suivi de ligne par correction proportionnelle combinant position et angle (anticipation des virages).
+- Arrêt automatique et sécurisé à la détection du ruban bleu.
+- Manœuvre de recherche en cas de perte de la ligne.
 
-## Copyright
+#### Actionneurs
+- **Moteur** : traction avant/arrière avec démarrage progressif pour préserver la transmission.
+- **Direction** : direction type voiture par servomoteur, avec bornage des angles de sécurité.
+- **Tourelle** : orientation de la caméra (axes horizontal et vertical).
+- **Feux arrière & LED** : signalisation lumineuse WS2812 (clignotants, alertes).
 
-Adeept brand and logo are copyright of Shenzhen Adeept Technology Co., Ltd. and cannot be used without written permission.
+## Architecture logicielle
 
+Le projet sépare la **vision** du **pilotage** :
 
+- `FluxVideo` (dossier `fonctions/`) — classe dédiée à la vision. Elle capture les images, effectue toute la détection et renvoie les informations (position, angle, présence du bleu) sans jamais commander le robot.
+- `main.py` (racine) — contient toute la logique de suivi de ligne : il interroge `FluxVideo` puis pilote les actionneurs en conséquence.
+- Dossier `classes/` — les classes matérielles : `Moteur`, `Direction`, `Tourelle`, ainsi que les classes de LED (`FeuxArriere`, `LEDDroitBas`, `LEDGaucheBas`) héritant d'une classe mère commune `BandeLed`.
+
+---
+
+### Boucle de contrôle
+
+```
+Capture image
+  ├── Ruban bleu proche ?      → arrêt de la séquence
+  ├── Ligne détectée ?          → calcul de l'angle de braquage → direction + moteur
+  └── Ligne perdue ?            → manœuvre de recherche
+```
+
+### Communication matérielle
+
+- **I2C (adresse 0x5f)** : pilotage des servomoteurs et du moteur via le contrôleur PCA9685.
+- **SPI (GPIO10)** : commande des LED adressables WS2812 pour la signalisation.
+- **Caméra CSI** : flux vidéo capturé via picamera2, traité par OpenCV.
+
+### Alimentation
+
+Le robot doit être alimenté par deux batteries 18650 (7,4 V) sur le connecteur Vin de la HAT lors du fonctionnement des moteurs. L'alimentation USB-C seule ne fournit pas le courant nécessaire et provoque des redémarrages (brownout).
