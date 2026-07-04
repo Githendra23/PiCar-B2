@@ -8,15 +8,18 @@ class Direction:
         self.CHANNEL = 0
 
         self.ANGLE_MIN = 0
-        self.ANGLE_MAX = 140
+        self.ANGLE_MAX = 130
         self.ANGLE_CENTER = 90
 
         self.servo.add_servo(self.CHANNEL)
         self.reset()
 
     def turn(self, angle):
-        if (angle >= self.ANGLE_MIN and angle <= self.ANGLE_MAX):
-            self.servo.set_angle(self.CHANNEL, angle)        
+        if(angle < self.ANGLE_MIN) :
+            angle = self.ANGLE_MIN
+        elif(angle > self.ANGLE_MAX) :
+            angle = self.ANGLE_MAX
+        self.servo.set_angle(self.CHANNEL, angle)        
 
     def getAngleMin(self):
         return self.ANGLE_MIN
