@@ -275,12 +275,9 @@ class FeuxArriere(threading.Thread):
             self.setLed(right, color, 255)
             time.sleep(0.1)
         
-
     def sequentialOn(self, color) :
         COUPLES_LED = [(8,13), (9,12), (10,11)]
         
-        color = [255,128,0]
-
         for left, right in COUPLES_LED:
             self.setLed(left, color, 255)
             self.setLed(right, color, 255)
