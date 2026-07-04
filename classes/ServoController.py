@@ -28,6 +28,16 @@ class ServoController:
         else:
             raise ValueError(f"Aucun servo configuré sur le cannal {channel}.")
 
+    def release_servo(self, channel):
+        """
+        Coupe le signal PMW d'un servo. Le servo arrête de maintenir activement sa position.
+        """
+
+        if channel in self.servos:
+            self.pca.channels[channel].duty_cycle = 0
+        else:
+            raise ValueError(f"Aucun servo configuré sur le canal {channel}.")
+
     def sweep(self, channel, start_angle=0, end_angle=180, step=1, delay=0.01):
         if channel not in self.servos:
             raise ValueError(f"Aucun servo configuré sur le cannal {channel}.")

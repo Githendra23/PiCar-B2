@@ -21,17 +21,30 @@ class Tourelle:
         
         self.capteurUltrason = CapteurUltrason.CapteurUltrason()
 
+        self.angle_x_actuel = None
+        self.angle_y_actuel = None
+
     def turnXAxis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
+            self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
+            self.angle_x_actuel = angle
         else:
             ValueError("Tourelle rotation X - Angle hors de portée")
 
     def turnYAxis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
             self.controller.set_angle(self.CHANNEL_Y_AXIS, angle)
+            self.angle_y_actuel = angle
         else:
             ValueError("Tourelle rotation Y - Angle hors de portée")
+    
+    def release_x_axis(self):
+        """
+        Coupe le signal PMW du servo horizontal.
+        """
+
+        self.controller.release_servo(self.CHANNEL_X_AXIS)
 
     # Renvoie True si un obstacle se trouve près de la tourelle, False sinon
     def obstacleNearby(self, matrix, distanceAlerte) :

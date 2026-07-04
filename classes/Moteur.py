@@ -114,21 +114,24 @@ if __name__ == '__main__':
     unMoteur = Moteur()
     try:
         gear = int(sys.argv[1])
-        if(gear == 0) : # Pour arrêter le moteur
+
+        if gear == 0: # Pour arrêter le moteur
             unMoteur.stop()
 
-        elif(gear == 1) : # Pour avancer
-            speed = 100
+        elif gear == 1: # Pour avancer
+            speed = 50
             print(f"Current : {unMoteur.current_speed}")
+
             while True :
                 unMoteur.drive(speed)
-            time.sleep(0.1)
+                time.sleep(0.1)
 
-        elif(gear == 2) : # Pour reculer
+        elif gear == 2: # Pour reculer
             speed = 30
+
             while True :
                 unMoteur.reverse(speed)
-            # time.sleep(2)
+                time.sleep(2)
             
         else : # Si l'utilisateur ne saisit pas une bonne entrée
             print("0 pour NEUTRE")
@@ -137,5 +140,6 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         print("Programme interrompu.")
+        
     finally :
         unMoteur.destroy()
