@@ -34,6 +34,8 @@ class ServoController:
     def set_angle(self, channel, angle):
         if channel in self.servos:
             self.servos[channel].angle = angle
+            time.sleep(0.5)
+            self.servos[channel].angle = None
         else:
             raise ValueError(f"Aucun servo configuré sur le cannal {channel}.")
 
