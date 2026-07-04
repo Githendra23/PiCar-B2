@@ -1,13 +1,12 @@
 import time
 
-import CapteurUltrason
+import self_components.CapteurUltrason as CapteurUltrason
 import ServoController
 
 ANGLE_MAX = 180
 ANGLE_MIN = 0
 
 ############################
-# AJOUTER LA LOGIQUE DU CAPTEUR ULTRASON
 # AJOUTER LES TRUCS POUR LA CAMÉRA
 ############################
 
@@ -34,14 +33,15 @@ class Tourelle:
         else:
             ValueError("Tourelle rotation Y - Angle hors de portée")
 
+    # Renvoie True si un obstacle se trouve près de la tourelle, False sinon
     def obstacleNearby(self, matrix, distanceAlerte) :
         for i in range(len(matrix)) :
             if(matrix[i] <= distanceAlerte) :
                 return True
-            
         return False
 
-    def getMatrixObstacles(self) :
+    # Renvoie la matrice des obstacles autour de la tourelle
+    def getMatrixObstacles(self, printAngle : bool) :
         matrice = []
         # anglesDetection = [0,45,90,135,180]
         self.reset()
@@ -50,16 +50,37 @@ class Tourelle:
         time.sleep(1)
         for angle in range(0,180) :
             self.turnXAxis(angle)
-            print(f"Angle : {angle}°")
-            time.sleep(0.01)
+            if(printAngle) :
+                # print(f"Angle : {angle}°")
+                pass
+            time.sleep(0.05)
 
             matrice.append(self.capteurUltrason.distance())
-        
+        self.reset()
         return matrice
+    
+    # Renvoie l'index matriciel de l'obstacle le plus proche
+    def getNearestObstacleIndex(self, matrix) :
+        minimum = 0
+        for i in range(len(matrix)) :
+            if(matrix[i] < minimum) :
+                minimum = i
+        return i
 
+    # Affiche les obstacles avec des 0 (si pas d'obstacle) et des 1 (si obstacle)
+    def printBinaryMatrixObstacles(self, matrix, distanceAlerte) :
+        for i in range(0,len(matrix),1) :
+            if(matrix[i] <= distanceAlerte) :
+                print("1",end="")
+            else :
+                print("0",end="")
+        print("")
+
+    # Renvoie la distance obtenue par le capteur ultrason
     def getDistance(self) :
         return self.capteurUltrason.distance()
 
+    # Renvoie True s'il n'y a pas d'obstacles autour de la tourelle
     def clearAround(self, matrix, distanceAlerte) :
         for i in range(len(matrix)) :
             if(matrix[i] <= distanceAlerte) :
@@ -71,12 +92,7 @@ class Tourelle:
         print(f"Angle X : ")
         print(f"Angle Y : ")
 
-    def getAngleMax(self):
-        return self.ANGLE_MAX
-
-    def getAngleMin(self):
-        return self.ANGLE_MIN
-
+    # Recentre la tourelle
     def reset(self):
         self.turnXAxis(90)
         self.turnYAxis(90)
