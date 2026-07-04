@@ -40,11 +40,12 @@ class Moteur:
         self.moteur.decay_mode = (motor.SLOW_DECAY)
 
         self.current_speed = 0
+        self.gear = 'N'
     
     # Pour avancer
     def drive(self, speed):
         speed = check_speed(speed)
-        print(f"Le moteur avance ! Vitesse : {speed}")
+        # print(f"Le moteur avance ! Vitesse : {speed}")
 
         diff = abs(self.current_speed - speed)
         if(diff >= 30) :
@@ -53,12 +54,13 @@ class Moteur:
         else :
             self.moteur.throttle = map(speed, 0, 100, 0, 1.0)
         self.current_speed = speed
+        self.gear = 'D'
 
 
     # Pour reculer
     def reverse(self, speed):
         speed = check_speed(speed)
-        print(f"Le moteur avance ! Vitesse : {speed}")
+        # print(f"Le moteur recule ! Vitesse : {speed}")
 
         diff = abs(self.current_speed - speed)
         if(diff >= 30) :
@@ -67,6 +69,7 @@ class Moteur:
         else :
             self.moteur.throttle = -map(speed, 0, 100, 0, 1.0)
         self.current_speed = speed
+        self.gear = 'R'
 
     # Pour un démarrage progressif afin de ne pas abîmer la transmission
     def progress_start(self, speed, direction) :
@@ -86,9 +89,10 @@ class Moteur:
   
     # Arrêter le moteur
     def stop(self):
-        print("Le moteur est à l'arrêt !")
+        # print("Le moteur est à l'arrêt !")
         self.moteur.throttle = 0
         self.current_speed = 0
+        self.gear = 'N'
 
     # Contrôle de traction, si les roues motrices patinent
     def TC(self, speed) :
@@ -103,11 +107,11 @@ class Moteur:
         self.stop()
         self.pwm_motor.deinit()
 
-# Création d'une instance du moteur
-unMoteur = Moteur()
 
 # Pour faire un test
 if __name__ == '__main__':
+    # Création d'une instance du moteur
+    unMoteur = Moteur()
     try:
         gear = int(sys.argv[1])
         if(gear == 0) : # Pour arrêter le moteur
