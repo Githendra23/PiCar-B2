@@ -218,26 +218,6 @@ class FeuxArriere(threading.Thread):
             
         self.show()
     
-    def blinkerLeft(self, delay) :
-        LEDS = [8,9,10]
-        
-        color = [255,128,0]
-
-        for left in LEDS:
-            self.setLed(left, color, 255)
-            time.sleep(delay)
-        self.off()
-    
-    def blinkerRight(self, delay) :
-        LEDS = [13,12,11]
-        
-        color = [255,128,0]
-
-        for right in LEDS:
-            self.setLed(right, color, 255)
-            time.sleep(delay)
-        self.off()
-
     # Éteint toutes les leds arrières.
     def off(self):
         self.setBackLeds([0, 0, 0], 255)
@@ -252,14 +232,6 @@ class FeuxArriere(threading.Thread):
         time.sleep(delay)
         self.setBackLeds([0, 0, 0],255)
         time.sleep(delay)
-
-    # Pour avoir un effet de clignotement séquentiel des leds arrières,
-    # on allume les leds par couple (gauche/droite) avec un délai entre chaque couple.
-    def sequentialWarnings(self) :
-        self.sequentialWarningsOn()
-
-        self.setBackLeds([0,0,0],255)
-        time.sleep(0.3)    
 
     def sequentialLeftOn(self, color) :
         LEDS = [8,9,10]

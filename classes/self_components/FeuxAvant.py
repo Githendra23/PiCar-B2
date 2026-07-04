@@ -111,26 +111,6 @@ class FeuxAvant():
         print("║Éteindre : +10             ║")
         print("║Exemple : 24 = éteindre L_R║")
         print("╚═══════════════════════════╝")
-    
-    # Clignotant gauche
-    def blinkerLeft(self, delay) :
-        self.switch(14)
-        self.switch(15)
-        time.sleep(delay)
-
-        self.switch(24)
-        self.switch(25)
-        time.sleep(delay)
-
-    # Clignotant droit
-    def blinkerRight(self, delay) :
-        self.switch(17)
-        self.switch(18)
-        time.sleep(delay)
-
-        self.switch(27)
-        self.switch(28)
-        time.sleep(delay)
 
     def off(self) :
         self.switch(24)
@@ -140,21 +120,6 @@ class FeuxAvant():
         self.switch(28)
         self.switch(29)
     
-    # Feux de détresse
-    def warnings(self) :
-        # On met la lumière en jaune, avec un délai d'extinction et de rallumage de 0.5 seconde
-        self.warningsOn()
-        time.sleep(0.3)
-
-        self.off()
-        time.sleep(0.3)
-
-    def warningsOn(self) :
-        self.switch(14)
-        self.switch(15)
-        self.switch(17)
-        self.switch(18)
-
     # Fait des appels de phare
     def appel_de_phares(self) :
         delay = 0.1
