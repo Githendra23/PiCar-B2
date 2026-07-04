@@ -1,12 +1,3 @@
-#!/usr/bin/env/python3
-'''
- SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
-# Import the PCA9685 module. Available in the bundle and here:
-#   https://github.com/adafruit/Adafruit_CircuitPython_PCA9685
-# sudo pip3 install adafruit-circuitpython-motor
-# sudo pip3 install adafruit-circuitpython-pca9685
-'''
 import time
 from board import SCL, SDA
 import busio
