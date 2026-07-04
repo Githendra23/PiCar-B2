@@ -251,6 +251,10 @@ class FeuxArriere(threading.Thread):
             self.setLed(left, color, 255)
             self.setLed(right, color, 255)
             time.sleep(0.1)
+
+    def close(self) :
+        self.off()
+        self.led_close()
         
 if __name__ == '__main__':
     try:
