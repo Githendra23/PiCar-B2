@@ -2,6 +2,10 @@
 
 **Projet Mastercamp Systèmes Embarqués — EFREI Paris**
 
+<p align="center">
+  <img width="298" height="318" alt="Adeept PiCar-B2" src="https://github.com/user-attachments/assets/79ad1699-c452-4090-a4bf-2c61f6ddf20c" />
+</p>
+
 Ce projet consiste à programmer un robot mobile autonome basé sur un **Raspberry Pi 4** et le kit **Adeept PiCar-B2**. Le robot est capable de se centrer sur une ligne rouge au sol, de la suivre par vision par ordinateur, de détecter des flèches directionnelles pour choisir sa trajectoire, et de s'arrêter automatiquement devant un ruban bleu. L'ensemble est piloté par une architecture logicielle orientée objet, avec un retour vidéo en temps réel accessible via une interface web.
 
 ## Technologies utilisées
