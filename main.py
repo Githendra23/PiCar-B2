@@ -12,8 +12,8 @@ from Direction import Direction
 from Tourelle import Tourelle
 
 sys.path.append(os.path.join(RACINE, "classes", "self_components"))
-import FeuxArriere as FeuxArriere
-import FeuxAvant as FeuxAvant
+from FeuxArriere import FeuxArriere
+from FeuxAvant import FeuxAvant
 
 
 
