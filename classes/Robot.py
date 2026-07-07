@@ -5,13 +5,14 @@ import Batterie
 import Buzzer
 import CapteurSuiviLigne
 import Direction
-import self_components.FeuxAvant as FeuxAvant
-import self_components.FeuxArriere as FeuxArriere
-import self_components.LEDDroitBas as LEDDroitBas
-import self_components.LEDGaucheBas as LEDGaucheBas
 import Moteur
 import Tourelle
 
+sys.path.append(os.path.join(RACINE, "self_components"))
+import FeuxAvant as FeuxAvant
+import FeuxArriere as FeuxArriere
+import LEDDroitBas as LEDDroitBas
+import LEDGaucheBas as LEDGaucheBas
 
 
 class Robot :
