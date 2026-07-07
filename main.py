@@ -6,10 +6,12 @@ RACINE = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(RACINE, "fonctions"))
 from FluxVideo import FluxVideo
 
-sys.path.append(os.path.join(RACINE, "classes", "self_components"))
+sys.path.append(os.path.join(RACINE, "classes"))
 from Moteur import Moteur
 from Direction import Direction
 from Tourelle import Tourelle
+
+sys.path.append(os.path.join(RACINE, "classes", "self_components"))
 import FeuxArriere as FeuxArriere
 import FeuxAvant as FeuxAvant
 
