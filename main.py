@@ -178,12 +178,12 @@ def suivi_ligne_noire(capteur, moteur, direction):
             # --- Virage serre (un seul cote, sans milieu) ---
             elif gauche and not milieu and not droite:
                 direction.turn(ANGLE_FOND_GAUCHE)
-                moteur.drive(VITESSE * 0.5)
+                moteur.drive(VITESSE * 0.65)
                 dernier_braquage = ANGLE_FOND_GAUCHE
                 dernier_type = "fond"
             elif droite and not milieu and not gauche:
                 direction.turn(ANGLE_FOND_DROITE)
-                moteur.drive(VITESSE * 0.5)
+                moteur.drive(VITESSE * 0.65)
                 dernier_braquage = ANGLE_FOND_DROITE
                 dernier_type = "fond"
 
