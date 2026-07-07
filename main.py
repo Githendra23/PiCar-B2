@@ -22,7 +22,7 @@ VITESSE = 30            # vitesse d'avance
 # Seuil (en degres de servo) au-dela duquel on considere que le robot "tourne"
 SEUIL_CLIGNOTANT = 15
 
-STREAMING = False
+STREAMING = True
 
 def calculer_angle_servo(direction, erreur_position, angle_ligne=None):
     """
@@ -102,7 +102,7 @@ def main():
                 direction.reset()
                 # feuxAvant.off()
                 print("Ruban bleu detecte -> arret de la sequence")
-                break
+                
 
             # 2) Ligne detectee (mode complet OU degrade)
             if infos["ligne_detectee"]:
