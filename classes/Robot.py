@@ -22,7 +22,7 @@ class Robot :
         self.direction = Direction.Direction()
         
         self.feuxAvant = FeuxAvant.FeuxAvant()
-        self.feuxArriere = FeuxArriere.FeuxArriere()
+        self.feuxArriere = FeuxArriere.FeuxArriere(14)
         
         self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
         self.ledDroitBas = LEDDroitBas.LEDDroitBas()
@@ -74,7 +74,7 @@ class Robot :
         thread.start()
 
     def suiviLigne(self) :
-        speed = 35
+        speed = 25
         reverse_speed = 15
         MOST_LEFT = 130
         MID_LEFT = 110
@@ -118,20 +118,20 @@ class Robot :
                 self.stopEngine()
                 self.direction.turn(MOST_RIGHT)
                 self.reverse(15)
-                time.sleep(0.25)
+                time.sleep(0.5)
                 self.direction.turn(MOST_LEFT)
                 self.drive(15)
-                time.sleep(0.25)
+                time.sleep(0.5)
                 self.direction.reset()
 
             elif(etat == (0,0,1)) : # Virage fort à droite
                 self.stopEngine()
                 self.direction.turn(MOST_LEFT)
                 self.reverse(15)
-                time.sleep(0.25)
+                time.sleep(0.5)
                 self.direction.turn(MOST_RIGHT)
                 self.drive(15)
-                time.sleep(0.25)
+                time.sleep(0.5)
                 self.direction.reset()
 
             elif(etat == (0,1,1)) :
@@ -151,7 +151,7 @@ class Robot :
                 time.sleep(0.2)
                 self.direction.reset()
 
-            time.sleep(0.05)
+            time.sleep(0.01)
             previous_state = etat
 
     def blackLineDetected(self) :
@@ -160,56 +160,55 @@ class Robot :
             return True
         return False
 
-    def getLargestFreeBand(self, matrix, distanceAlerte):
-        if self.tourelle.clearAround(matrix, distanceAlerte):
-            return 0, 180
+    def getLargestFreeBand(self, binaryMatrix, step):
+        best_start = -1
+        best_end = -1
+        best_len = 0
 
-        minAngle = 0
-        maxAngle = 0
-        bestSize = -1
+        current_start = None
 
-        i = 0
-        while i < len(matrix):
-            # On saute les zones non libres
-            if matrix[i] <= distanceAlerte:
-                i += 1
-                continue
+        for i, value in enumerate(binaryMatrix):
+            if value == 0:
+                if current_start is None:
+                    current_start = i
+            else:
+                if current_start is not None:
+                    current_len = i - current_start
+                    if current_len > best_len:
+                        best_len = current_len
+                        best_start = current_start
+                        best_end = i - 1
+                    current_start = None
 
-            # Début d'une zone libre
-            start = i
+        # Cas où la plus longue portion de 0 va jusqu'à la fin du vecteur
+        if current_start is not None:
+            current_len = len(binaryMatrix) - current_start
+            if current_len > best_len:
+                best_start = current_start
+                best_end = len(binaryMatrix) - 1
 
-            while i < len(matrix) and matrix[i] > distanceAlerte:
-                i += 1
-
-            end = i - 1
-            size = end - start
-
-            if size > bestSize:
-                minAngle = start
-                maxAngle = end
-                bestSize = size
-
-        return minAngle, maxAngle
+        return best_start*step, best_end*step
 
     # distanceObstacle en millimètres
-    def analyseObstacle(self) :
+    def detectionObstacle(self) :
         MOST_LEFT = 140
         MOST_RIGHT = 40
-        distanceAlerte = 200
+        distanceAlerte = 150
         speed = 15
         self.tourelle.reset() # On centre la tourelle
+        step = 18
 
         while True :
             self.stopEngine()
 
-            matriceObstacles = self.tourelle.getMatrixObstacles(printAngle=False)
-            self.tourelle.printBinaryMatrixObstacles(matriceObstacles, distanceAlerte)
-            # time.sleep(0.5)
+            matriceObstacles = self.tourelle.getMatrixObstacles(step,printAngle=False)
+            # print(matriceObstacles)
+            matriceBinaire = Tourelle.toBinary(matriceObstacles, distanceAlerte)
 
-            minAngle, maxAngle = self.getLargestFreeBand(matriceObstacles, distanceAlerte)
+
+            minAngle, maxAngle = self.getLargestFreeBand(matriceBinaire, step)
             if(minAngle == maxAngle) :
                 print("Pépin !")
-                # return
                 minAngle = 0
                 maxAngle = 180
             print(f"Min : {minAngle}° et Max : {maxAngle}")
@@ -220,25 +219,13 @@ class Robot :
 
             forwardTime = 0
             self.tourelle.turnXAxis(angleBraquage)
-            while(not(self.blackLineDetected()) and (forwardTime < 3) and (self.tourelle.getDistance() >= 150)) :
+            while(not(self.blackLineDetected()) and (forwardTime < 2) and (self.tourelle.getDistance() >= 150)) :
                 self.drive(speed)
                 forwardTime = forwardTime + 0.1
                 time.sleep(0.1)
 
             self.stopEngine()
             self.tourelle.reset()
-
-            
-            matriceObstacles = self.tourelle.getMatrixObstacles(printAngle=False)
-            if(self.tourelle.obstacleNearby(matriceObstacles, 150)) :
-            # if(self.tourelle.getDistance() <= 150) : # Si durant le drive on se retrouve face à un obstacle
-                self.direction.reset()
-                print("Obstacle devant ! On recule !")
-                self.moteur.reverse(10)
-                self.direction.turn(MOST_LEFT)
-                time.sleep(1)
-                self.direction.reset()
-                continue
             
             self.drive(speed)
             etat = self.capteurSuiviLigne.getState()
@@ -285,7 +272,7 @@ if __name__ == '__main__':
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
-        robot.analyseObstacle()
+        robot.detectionObstacle()
 
         # while True :
         #     angleX = int(input("Angle : "))

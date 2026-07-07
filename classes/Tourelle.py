@@ -10,6 +10,25 @@ ANGLE_MIN = 0
 # AJOUTER LES TRUCS POUR LA CAMÉRA
 ############################
 
+# Affiche les obstacles avec des 0 (si pas d'obstacle) et des 1 (si obstacle)
+def printBinaryMatrixObstacles(matriceBinaire) :
+    for i in range(len(matriceBinaire)) :
+            print(f"{matriceBinaire[i]}",end="")
+    print("")
+
+def toBinary(matrix, distanceAlerte) :
+    matriceBinaire = []
+    for i in range(180) :
+        if(matrix[i] == -1) :
+            continue
+        
+        if(matrix[i] <= distanceAlerte) :
+            matriceBinaire.append(1)
+        else :
+            matriceBinaire.append(0)
+    print("Matrice binaire : ",matriceBinaire)
+    return matriceBinaire
+
 class Tourelle:
     def __init__(self):
         self.CHANNEL_X_AXIS = 1 # horizontal
@@ -26,7 +45,6 @@ class Tourelle:
 
     def turnXAxis(self, angle):
         if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
-            self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
             self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
             self.angle_x_actuel = angle
         else:
@@ -46,64 +64,28 @@ class Tourelle:
 
         self.controller.release_servo(self.CHANNEL_X_AXIS)
 
-    # Renvoie True si un obstacle se trouve près de la tourelle, False sinon
-    def obstacleNearby(self, matrix, distanceAlerte) :
-        for i in range(len(matrix)) :
-            if(matrix[i] <= distanceAlerte) :
-                return True
-        return False
-
     # Renvoie la matrice des obstacles autour de la tourelle
-    def getMatrixObstacles(self, printAngle : bool) :
-        matrice = []
+    def getMatrixObstacles(self, step, printAngle : bool) :
+        matrice = [-1]*180
         # anglesDetection = [0,45,90,135,180]
         self.reset()
 
         self.turnXAxis(0)
         time.sleep(1)
-        for angle in range(0,180) :
+        
+        for angle in range(0, 180, step) :
             self.turnXAxis(angle)
+            matrice[angle] = self.capteurUltrason.distance()
             if(printAngle) :
-                # print(f"Angle : {angle}°")
-                pass
-            time.sleep(0.05)
+                print(f"Angle : {angle}°")
+            time.sleep(0.3)
 
-            matrice.append(self.capteurUltrason.distance())
         self.reset()
         return matrice
-    
-    # Renvoie l'index matriciel de l'obstacle le plus proche
-    def getNearestObstacleIndex(self, matrix) :
-        minimum = 0
-        for i in range(len(matrix)) :
-            if(matrix[i] < minimum) :
-                minimum = i
-        return i
-
-    # Affiche les obstacles avec des 0 (si pas d'obstacle) et des 1 (si obstacle)
-    def printBinaryMatrixObstacles(self, matrix, distanceAlerte) :
-        for i in range(0,len(matrix),1) :
-            if(matrix[i] <= distanceAlerte) :
-                print("1",end="")
-            else :
-                print("0",end="")
-        print("")
 
     # Renvoie la distance obtenue par le capteur ultrason
     def getDistance(self) :
         return self.capteurUltrason.distance()
-
-    # Renvoie True s'il n'y a pas d'obstacles autour de la tourelle
-    def clearAround(self, matrix, distanceAlerte) :
-        for i in range(len(matrix)) :
-            if(matrix[i] <= distanceAlerte) :
-                return False
-        return True
-
-
-    def printAngles(self) :
-        print(f"Angle X : ")
-        print(f"Angle Y : ")
 
     # Recentre la tourelle
     def reset(self):
