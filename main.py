@@ -160,7 +160,7 @@ def main():
 
     ledArriere.set_led_brightness(0)
     ledArriere.set_all_led_rgb([0, 0, 0])
-    tourelle.turn_y_axis(50)
+    tourelle.turnYAxis(50)
 
     try:
         # Mission 1 : suivre la ligne rouge jusqu'au ruban bleu
@@ -173,7 +173,7 @@ def main():
     except KeyboardInterrupt:
         print("Arret manuel")
     finally:
-        tourelle.turn_y_axis(0)
+        tourelle.turnYAxis(0)
         moteur.destroy()
         direction.reset()
         if feuxAvant:
