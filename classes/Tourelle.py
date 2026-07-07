@@ -1,10 +1,14 @@
 import time
 
-import CapteurUltrason
+import self_components.CapteurUltrason as CapteurUltrason
 import ServoController
 
 ANGLE_MAX = 180
 ANGLE_MIN = 0
+
+############################
+# AJOUTER LES TRUCS POUR LA CAMÉRA
+############################
 
 class Tourelle:
     def __init__(self):
@@ -20,16 +24,21 @@ class Tourelle:
         self.angle_x_actuel = None
         self.angle_y_actuel = None
 
-    def turn_x_axis(self, angle):
-        if angle < ANGLE_MIN or angle > ANGLE_MAX:
-            raise ValueError("Tourelle rotation X - Angle hors de portée")
+    def turnXAxis(self, angle):
+        if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
+            self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
+            self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
+            self.angle_x_actuel = angle
+        else:
+            ValueError("Tourelle rotation X - Angle hors de portée")
 
-        if self.angle_x_actuel == angle:
-            return 
-
-        self.controller.set_angle(self.CHANNEL_X_AXIS, angle)
-        self.angle_x_actuel = angle
-
+    def turnYAxis(self, angle):
+        if (angle >= ANGLE_MIN and angle <= ANGLE_MAX):
+            self.controller.set_angle(self.CHANNEL_Y_AXIS, angle)
+            self.angle_y_actuel = angle
+        else:
+            ValueError("Tourelle rotation Y - Angle hors de portée")
+    
     def release_x_axis(self):
         """
         Coupe le signal PMW du servo horizontal.
@@ -37,44 +46,69 @@ class Tourelle:
 
         self.controller.release_servo(self.CHANNEL_X_AXIS)
 
-    def turn_y_axis(self, angle):
-        if angle < ANGLE_MIN or angle > ANGLE_MAX:
-            raise ValueError("Tourelle rotation Y - Angle hors de portée")
+    # Renvoie True si un obstacle se trouve près de la tourelle, False sinon
+    def obstacleNearby(self, matrix, distanceAlerte) :
+        for i in range(len(matrix)) :
+            if(matrix[i] <= distanceAlerte) :
+                return True
+        return False
 
-        if self.angle_y_actuel == angle:
-            return
-
-        self.controller.set_angle(self.CHANNEL_Y_AXIS, angle)
-        self.angle_y_actuel = angle
-
-
-    def getMatrixObstacles(self) :
+    # Renvoie la matrice des obstacles autour de la tourelle
+    def getMatrixObstacles(self, printAngle : bool) :
         matrice = []
+        # anglesDetection = [0,45,90,135,180]
         self.reset()
 
-        for i in range (0,180,1) :
-            self.turn_x_axis(i)
-            matrice.append(self.capteurUltrason.distance())
-            time.sleep(0.01)
-        
-        return matrice
+        self.turnXAxis(0)
+        time.sleep(1)
+        for angle in range(0,180) :
+            self.turnXAxis(angle)
+            if(printAngle) :
+                # print(f"Angle : {angle}°")
+                pass
+            time.sleep(0.05)
 
+            matrice.append(self.capteurUltrason.distance())
+        self.reset()
+        return matrice
+    
+    # Renvoie l'index matriciel de l'obstacle le plus proche
+    def getNearestObstacleIndex(self, matrix) :
+        minimum = 0
+        for i in range(len(matrix)) :
+            if(matrix[i] < minimum) :
+                minimum = i
+        return i
+
+    # Affiche les obstacles avec des 0 (si pas d'obstacle) et des 1 (si obstacle)
+    def printBinaryMatrixObstacles(self, matrix, distanceAlerte) :
+        for i in range(0,len(matrix),1) :
+            if(matrix[i] <= distanceAlerte) :
+                print("1",end="")
+            else :
+                print("0",end="")
+        print("")
+
+    # Renvoie la distance obtenue par le capteur ultrason
     def getDistance(self) :
         return self.capteurUltrason.distance()
 
-    def print_angle(self) :
+    # Renvoie True s'il n'y a pas d'obstacles autour de la tourelle
+    def clearAround(self, matrix, distanceAlerte) :
+        for i in range(len(matrix)) :
+            if(matrix[i] <= distanceAlerte) :
+                return False
+        return True
+
+
+    def printAngles(self) :
         print(f"Angle X : ")
         print(f"Angle Y : ")
 
-    def getAngleMax(self):
-        return self.ANGLE_MAX
-
-    def getAngleMin(self):
-        return self.ANGLE_MIN
-
+    # Recentre la tourelle
     def reset(self):
-        self.turn_x_axis(88)
-        self.turn_y_axis(90)
+        self.turnXAxis(90)
+        self.turnYAxis(90)
 
 
 if __name__ == "__main__" :
@@ -84,12 +118,9 @@ if __name__ == "__main__" :
         # x_angle = int(input("Entrez l'angle sur l'axe X : "))
         # y_angle = int(input("Entrez l'angle sur l'axe Y : "))
 
-        # tourelle.turn_x_axis(x_angle)
-        # tourelle.turn_y_axis(y_angle)
+        # tourelle.turnXAxis(x_angle)
+        # tourelle.turnYAxis(y_angle)
         # # tourelle.print_angle()
-
-        tourelle.analyse(250)
-        time.sleep(2)
         
         tourelle.reset()
         time.sleep(1)

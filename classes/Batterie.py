@@ -27,7 +27,7 @@ class Batterie :
     def getPercentage(self) :
         self.device.write_then_readinto(bytes([self.control_byte]), buffer)
         adcValue = buffer[0]
-        print(str(adcValue))
+        # print(str(adcValue))
         A0Voltage = (adcValue / 255) * 5
         ActualBatteryVoltage = A0Voltage / DivisionRatio
         batteryPercentage = (ActualBatteryVoltage - WarningThreshold) / (Vref - WarningThreshold) * 100

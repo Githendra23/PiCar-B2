@@ -1,7 +1,7 @@
 import time
 import threading
 
-import CapteurUltrason
+import self_components.CapteurUltrason as CapteurUltrason
 import CapteurLumiere
 import LEDAvant
 import Moteur

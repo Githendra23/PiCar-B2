@@ -145,31 +145,34 @@ class FeuxAvant():
         self.switch(27)
         self.switch(28)
         self.switch(29)
+    
+    # Fait des appels de phare
+    def appel_de_phares(self) :
+        delay = 0.1
 
-    # Feux de detresse (NON-BLOQUANT) : les deux cotes clignotent ensemble
-    def warnings(self, maintenant, delai_ms=300):
-        if maintenant >= self._temps_warnings + delai_ms:
-            self._temps_warnings = maintenant
-            self._etat_warnings = not self._etat_warnings
-            if self._etat_warnings:
-                self.warningsOn()
-            else:
-                self.off()
+        for i in range (3) :
+            self.switch(14)
+            self.switch(15)
+            self.switch(16)
+            self.switch(17)
+            self.switch(18)
+            self.switch(19)
+            time.sleep(delay)
 
-    def warningsOn(self):
-        self.switch(14)
-        self.switch(15)
-        self.switch(17)
-        self.switch(18)
-
+            self.switch(24)
+            self.switch(25)
+            self.switch(26)
+            self.switch(27)
+            self.switch(28)
+            self.switch(29)
+            time.sleep(delay)
+    
 
 if __name__ == "__main__":
     feuxAvant = FeuxAvant()
     try:
         while True:
-            maintenant = time.time() * 1000
-            feuxAvant.blinker_left(maintenant)
-            time.sleep(0.01)
+            feuxAvant.appel_de_phares()
     except KeyboardInterrupt:
         feuxAvant.off()
-        print("Arret")
+        print("Interruption via le clavier.")
