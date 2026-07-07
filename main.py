@@ -139,7 +139,7 @@ def detecter_fleches(camera, moteur, direction, feuxAvant=None):
     pass
 
 def suivi_ligne_noire():
-
+    pass
 
 
 # ==========================================================================
