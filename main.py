@@ -10,8 +10,8 @@ sys.path.append(os.path.join(RACINE, "classes"))
 from Moteur import Moteur
 from Direction import Direction
 from Tourelle import Tourelle
-from FeuxArriere import FeuxArriere
-from FeuxAvant import FeuxAvant
+import self_components.FeuxArriere as FeuxArriere
+import self_components.FeuxAvant as FeuxAvant
 
 # ==========================================================================
 # PARAMETRES DE PILOTAGE (a ajuster au test)
