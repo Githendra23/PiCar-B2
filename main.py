@@ -245,7 +245,10 @@ def main():
 
     try:
         # Mission 1 : suivre la ligne rouge jusqu'au ruban bleu
-        resultat = suivi_ligne_noire(camera, moteur, direction)
+        
+        # resultat = suivre_ligne_rouge(camera, moteur, direction, feuxAvant)
+
+        resultat = suivi_ligne_noire(capteur, moteur, direction)
 
         # Exemple d'enchainement (a activer plus tard) :
         # if resultat == "bleu":
