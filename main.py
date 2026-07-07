@@ -85,7 +85,6 @@ def main():
     ledArriere.set_led_brightness(0)
     ledArriere.set_all_led_rgb([0, 0, 0])
     # feuxAvant.off()
-    tourelle.reset()
     tourelle.turn_y_axis(50)
 
     ligne_deja_detectee = False
