@@ -145,6 +145,9 @@ def suivi_ligne_noire(capteur, moteur, direction):
     dernier_type = "droit"     # 'droit' | '45' | 'fond'
     temps_perte = None
 
+    VITESSE = 20
+
+
     while True:
         gauche, milieu, droite = capteur.getState()
         ligne_visible = (gauche or milieu or droite)
