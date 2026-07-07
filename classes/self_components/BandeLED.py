@@ -5,7 +5,7 @@ from numpy import sin, cos, pi
 import time
 
 class BandeLED(threading.Thread):
-    def __init__(self, count = 8, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
+    def __init__(self, count, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
         self.set_led_type(sequence)
         self.set_led_count(count)
         self.set_led_brightness(bright)
@@ -221,12 +221,6 @@ class BandeLED(threading.Thread):
 
 
 if __name__ == '__main__':
-    import os
-    
-    print("spidev version is ", spidev.__version__)
-    print("spidev device as show:")
-    os.system("ls /dev/spi*")
-    
     led = BandeLED(14, 255)            # Use MOSI for /dev/spidev0 to drive the lights
 
     try:
