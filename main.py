@@ -24,7 +24,7 @@ ZONE_MORTE = 40         # marge d'erreur (px) : en dessous -> robot considere ce
 GAIN_POSITION = 0.15    # correction basee sur l'ecart lateral
 GAIN_ANGLE = 0.40       # correction basee sur l'orientation de la ligne (anticipe les virages)
 SENS_SERVO = 1          # 1 ou -1 : a inverser si le robot braque du mauvais côté
-VITESSE = 35            # vitesse d'avance
+VITESSE = 50            # vitesse d'avance
 SEUIL_CLIGNOTANT = 15   # seuil (deg servo) au-dela duquel on allume un clignotant
 
 STREAMING = True
@@ -116,7 +116,7 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
             if ligne_deja_detectee:
                 # Deja vu la ligne : roues droites + recul jusqu'a la retrouver
                 direction.turn(direction.getAngleCenter())
-                moteur.reverse(VITESSE * 0.5)
+                moteur.reverse(VITESSE * 0.3)
                 if feuxAvant:
                     feuxAvant.warnings(maintenant)
                 print("Ligne perdue -> recul de recherche")
