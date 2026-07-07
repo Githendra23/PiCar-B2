@@ -39,7 +39,7 @@ if __name__ == '__main__':
         while True:
             print(
                 'gauche: %0.1f milieu: %0.1f droite: %0.1f'
-                % capteur_ligne.statut()
+                % capteur_ligne.getState()
             )
             time.sleep(0.3)
 
