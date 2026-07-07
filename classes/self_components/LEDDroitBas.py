@@ -1,8 +1,8 @@
 import time
-from BandeLed import BandeLed
+from BandeLED import BandeLED
 
 
-class LEDDroitBas(BandeLed):
+class LEDDroitBas(BandeLED):
     FRONT_LED = [0, 1]
     BOTTOM_LED = [2, 3, 4]
 

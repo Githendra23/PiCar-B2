@@ -1,5 +1,5 @@
 import time
-from .BandeLED import BandeLED
+from BandeLED import BandeLED
 
 
 class FeuxArriere(BandeLED):
