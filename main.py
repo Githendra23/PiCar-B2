@@ -127,7 +127,7 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 # ==========================================================================
 # MISSION : SUIVI DE LIGNE NOIRE (capteur IR 3 voies)
 # ==========================================================================
-def suivi_ligne_noire(capteur, moteur, direction):
+ddef suivi_ligne_noire(capteur, moteur, direction):
     """
     Suit une ligne noire avec les 3 capteurs IR.
     - Écart léger (2 capteurs) : ajustement incrémental et fluide.
