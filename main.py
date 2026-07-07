@@ -136,7 +136,6 @@ def main():
         print("Arret manuel")
     finally:
         tourelle.turn_y_axis(0)
-        moteur.reset()
         moteur.destroy()
         direction.reset()
         # feuxAvant.off()
