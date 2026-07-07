@@ -120,16 +120,7 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 def suivi_ligne_noire(capteur, moteur, direction):
     """
     Suit une ligne noire avec les 3 capteurs IR (1 = noir, 0 = blanc).
-
-    - 3 capteurs sur le noir OU milieu seul  -> tout droit
-    - milieu + gauche                        -> virage doux gauche (45)
-    - milieu + droite                        -> virage doux droite (45)
-    - gauche seul                            -> virage serre gauche (fond)
-    - droite seul                            -> virage serre droite (fond)
-    - rien (0,0,0) = ligne perdue -> recuperation selon le dernier mouvement :
-        * perdue en ligne droite  -> continuer 1s puis reculer droit
-        * perdue en virage doux   -> roues droites + reculer
-        * perdue en virage serre  -> braquer a fond de l'AUTRE cote + reculer
+    Gère les lignes discontinues droites en maintenant le cap pendant les coupures.
     """
     # --- Configuration des angles de braquage et constantes ---
     ANGLE_CENTRE = 90
@@ -140,7 +131,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
     
     VITESSE = 25
     VITESSE_RECUL = 15
-    DELAI_AVANT_RECUL = 1.0   # Temps (secondes) de maintien de trajectoire
+    DELAI_GAP_BLANC = 1.2     # Temps (secondes) maximal autorisé pour franchir l'espace blanc
     
     dernier_braquage = ANGLE_CENTRE
     dernier_type = "droit"     # 'droit' | '45' | 'fond'
@@ -151,7 +142,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
         ligne_visible = (gauche or milieu or droite)
 
         if ligne_visible:
-            # Reinitialisation systematique du chronometre des que la ligne est revue
+            # Réinitialisation immédiate dès qu'un segment noir réapparaît
             temps_perte = None
 
             # --- Tout droit ---
@@ -186,33 +177,34 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 dernier_type = "fond"
 
         else:
-            # --- Ligne perdue : Gestion de la recuperation ---
+            # --- Gestion de l'espace blanc (Ligne discontinue) ---
             if temps_perte is None:
-                temps_perte = time.time()  # Top chrono au moment precis de la perte
+                temps_perte = time.time()  # Initialisation du chronomètre au début de la coupure
             
             temps_ecoule = time.time() - temps_perte
 
-            if dernier_type == "droit":
-                # Pendant 1 seconde, on continue tout droit pour passer les coupures de ligne
-                if temps_ecoule < DELAI_AVANT_RECUL:
-                    direction.turn(ANGLE_CENTRE)
-                    moteur.drive(VITESSE)
-                else:
-                    # Passe la seconde, si toujours rien, on recule en ligne droite
+            if temps_ecoule < DELAI_GAP_BLANC:
+                # Comportement conservateur : on force les roues droites et on avance pour franchir l'interruption
+                direction.turn(ANGLE_CENTRE)
+                moteur.drive(VITESSE)
+            else:
+                # Si le délai est dépassé, la ligne est réellement perdue (fin de piste ou sortie de route)
+                # On applique la stratégie de secours selon le contexte précédent le gap
+                if dernier_type == "droit":
                     direction.turn(ANGLE_CENTRE)
                     moteur.reverse(VITESSE_RECUL)
 
-            elif dernier_type == "45":
-                direction.turn(ANGLE_CENTRE)
-                moteur.reverse(VITESSE_RECUL)
+                elif dernier_type == "45":
+                    direction.turn(ANGLE_CENTRE)
+                    moteur.reverse(VITESSE_RECUL)
 
-            elif dernier_type == "fond":
-                # Braquer a fond de l'AUTRE cote + reculer pour intercepter la ligne
-                if dernier_braquage == ANGLE_FOND_GAUCHE:
-                    direction.turn(ANGLE_FOND_DROITE)
-                else:
-                    direction.turn(ANGLE_FOND_GAUCHE)
-                moteur.reverse(VITESSE_RECUL)
+                elif dernier_type == "fond":
+                    # Contre-braquage pour tenter de reculer sur la dernière position connue de la ligne
+                    if dernier_braquage == ANGLE_FOND_GAUCHE:
+                        direction.turn(ANGLE_FOND_DROITE)
+                    else:
+                        direction.turn(ANGLE_FOND_GAUCHE)
+                    moteur.reverse(VITESSE_RECUL)
 
 
 # ==========================================================================
