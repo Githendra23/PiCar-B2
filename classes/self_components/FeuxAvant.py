@@ -1,6 +1,7 @@
+import time
 from gpiozero import PWMOutputDevice as PWM
 from gpiozero import LED
-import time
+
 
 class FeuxAvant():
     # Constructeur
@@ -16,21 +17,29 @@ class FeuxAvant():
         self.led1 = LED(9)
         self.led2 = LED(25)
         self.led3 = LED(11)
-        
+
         self.L_R = PWM(pin=Left_R, initial_value=1.0, frequency=2000)
         self.L_G = PWM(pin=Left_G, initial_value=1.0, frequency=2000)
         self.L_B = PWM(pin=Left_B, initial_value=1.0, frequency=2000)
-        
+
         self.R_R = PWM(pin=Right_R, initial_value=1.0, frequency=2000)
         self.R_G = PWM(pin=Right_G, initial_value=1.0, frequency=2000)
         self.R_B = PWM(pin=Right_B, initial_value=1.0, frequency=2000)
 
-    def right_on(self, colour = [1, 1, 1]):
+        # Etat non-bloquant : chaque effet a son propre repere de temps + son etat
+        self._temps_gauche = 0
+        self._temps_droite = 0
+        self._temps_warnings = 0
+        self._etat_gauche = False
+        self._etat_droite = False
+        self._etat_warnings = False
+
+    def right_on(self, colour=[1, 1, 1]):
         self.R_R.value = colour[0]
         self.R_G.value = colour[1]
         self.R_B.value = colour[2]
 
-    def left_on(self, colour = [1, 1, 1]):
+    def left_on(self, colour=[1, 1, 1]):
         self.L_R.value = colour[0]
         self.L_G.value = colour[1]
         self.L_B.value = colour[2]
@@ -47,56 +56,45 @@ class FeuxAvant():
 
     def switch(self, commande):
         match commande:
-            case 11: # Allumer la LED n°1
+            case 11:
                 self.led1.on()
-            case 21: # Éteindre la LED n°1
+            case 21:
                 self.led1.off()
-
-            case 12: # Allumer la LED n°2
+            case 12:
                 self.led2.on()
-            case 22: # Éteindre la LED n°2
+            case 22:
                 self.led2.off()
-
-            case 13: # Allumer la LED n°3
+            case 13:
                 self.led3.on()
-            case 23: # Éteindre la LED n°3
+            case 23:
                 self.led3.off()
-
-            
-            case 14: # Allumer la LED rouge de gauche
+            case 14:
                 self.L_R.value = 0.0
-            case 24: # Éteindre la LED rouge de gauche
+            case 24:
                 self.L_R.value = 1.0
-
-            case 15: # Allumer la LED verte de gauche
+            case 15:
                 self.L_G.value = 0.0
-            case 25: # Éteindre la LED verte de gauche
+            case 25:
                 self.L_G.value = 1.0
-
-            case 16: # Allumer la LED bleue de gauche
+            case 16:
                 self.L_B.value = 0.0
-            case 26: # Éteindre la LED bleue de gauche
+            case 26:
                 self.L_B.value = 1.0
-
-            case 17: # Allumer la LED rouge de droite
+            case 17:
                 self.R_R.value = 0.0
-            case 27: # Éteindre la LED rouge de droite
-                self.R_R.value = 1.0  
-
-            case 18: # Allumer la LED verte de gauche
+            case 27:
+                self.R_R.value = 1.0
+            case 18:
                 self.R_G.value = 0.0
-            case 28: # Éteindre la LED verte de gauche
+            case 28:
                 self.R_G.value = 1.0
-
-            case 19: # Allumer la LED bleue de gauche
+            case 19:
                 self.R_B.value = 0.0
-            case 29: # Éteindre la LED bleue de gauche
+            case 29:
                 self.R_B.value = 1.0
-
-            case default: # Les autres cas
+            case default:
                 return "Invalid command"
-    
-    # Les instructions pour allumer chaque RGB (gauche et droit) individuellement
+
     def instruction(self):
         print("╔═════════╦════════╦════════╗")
         print("║    11   ║   12   ║   13   ║")
@@ -112,7 +110,35 @@ class FeuxAvant():
         print("║Exemple : 24 = éteindre L_R║")
         print("╚═══════════════════════════╝")
 
-    def off(self) :
+    # ------------------------------------------------------------------
+    # Clignotant gauche (NON-BLOQUANT).
+    # 'maintenant' (ms) est fourni par le main (une seule lecture d'horloge).
+    # A chaque fois que le delai est ecoule, on bascule allume <-> eteint.
+    # ------------------------------------------------------------------
+    def blinker_left(self, maintenant, delai_ms=500):
+        if maintenant >= self._temps_gauche + delai_ms:
+            self._temps_gauche = maintenant
+            self._etat_gauche = not self._etat_gauche
+            if self._etat_gauche:
+                self.switch(14)
+                self.switch(15)
+            else:
+                self.switch(24)
+                self.switch(25)
+
+    # Clignotant droit (NON-BLOQUANT)
+    def blinker_right(self, maintenant, delai_ms=500):
+        if maintenant >= self._temps_droite + delai_ms:
+            self._temps_droite = maintenant
+            self._etat_droite = not self._etat_droite
+            if self._etat_droite:
+                self.switch(17)
+                self.switch(18)
+            else:
+                self.switch(27)
+                self.switch(28)
+
+    def off(self):
         self.switch(24)
         self.switch(25)
         self.switch(26)
@@ -144,7 +170,9 @@ class FeuxAvant():
 
 if __name__ == "__main__":
     feuxAvant = FeuxAvant()
-    while True:
-        feuxAvant.instruction()
-        commande = int(input("Commande : "))
-        feuxAvant.switch(commande)
+    try:
+        while True:
+            feuxAvant.appel_de_phares()
+    except KeyboardInterrupt:
+        feuxAvant.off()
+        print("Interruption via le clavier.")

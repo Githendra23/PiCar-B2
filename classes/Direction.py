@@ -5,6 +5,7 @@ import time
 class Direction:
     def __init__(self):
         self.servo = ServoController.ServoController()
+
         self.CHANNEL = 0
 
         self.ANGLE_MIN = 0
