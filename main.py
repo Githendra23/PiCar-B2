@@ -134,7 +134,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
     """
     # Parametres de regulation angulaire
     PAS_DOUX = 2            # Incrément pour une erreur legere
-    PAS_FORT = 5            # Incrément pour une erreur forte
+    PAS_FORT = 10            # Incrément pour une erreur forte
     PAS_RETOUR = 3          # Incrément pour le retour au centre
     DELAI_MAJ = 0.02        # Delai (s) entre chaque calcul d'increment (20ms)
 
