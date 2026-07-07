@@ -5,11 +5,11 @@ from numpy import sin, cos, pi
 import time
 
 class BandeLED(threading.Thread):
-    def __init__(self, count, bright = 255, sequence='GRB', bus = 0, device = 0, *args, **kwargs):
-        self.set_led_type(sequence)
-        self.set_led_count(count)
-        self.set_led_brightness(bright)
-        self.led_begin(bus, device)
+    def __init__(self):
+        self.set_led_type('GRB')
+        self.set_led_count(14)
+        self.set_led_brightness(255)
+        self.led_begin(0, 0)
         self.lightMode = 'none'
         self.colorBreathR = 0
         self.colorBreathG = 0
@@ -17,7 +17,7 @@ class BandeLED(threading.Thread):
         self.breathSteps = 10
         #self.spi_gpio_info()
         self.set_all_led_color(0,0,0)
-        super(BandeLED, self).__init__(*args, **kwargs)
+        super(BandeLED, self).__init__()
         self.__flag = threading.Event()
         self.__flag.clear()
     
