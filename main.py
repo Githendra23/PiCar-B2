@@ -155,12 +155,12 @@ def suivi_ligne_noire(capteur, moteur, direction):
             # --- Virage doux (milieu + un cote) ---
             elif milieu and gauche:
                 direction.turn(ANGLE_45_GAUCHE)
-                moteur.drive(int(VITESSE * 0.75))
+                moteur.drive(int(VITESSE * 0.7))
                 dernier_braquage = ANGLE_45_GAUCHE
                 dernier_type = "45"
             elif milieu and droite:
                 direction.turn(ANGLE_45_DROITE)
-                moteur.drive(int(VITESSE * 0.75))
+                moteur.drive(int(VITESSE * 0.7))
                 dernier_braquage = ANGLE_45_DROITE
                 dernier_type = "45"
 
