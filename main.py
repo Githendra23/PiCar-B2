@@ -80,11 +80,11 @@ def main():
     direction = Direction()
     tourelle = Tourelle()
     ledArriere = FeuxArriere()
-    feuxAvant = FeuxAvant()
+    # feuxAvant = FeuxAvant()
 
     ledArriere.set_led_brightness(0)
     ledArriere.set_all_led_rgb([0, 0, 0])
-    feuxAvant.off()
+    # feuxAvant.off()
     tourelle.reset()
     tourelle.turn_y_axis(50)
 
@@ -101,7 +101,7 @@ def main():
             if infos["bleu"]:
                 moteur.stop()
                 direction.reset()
-                feuxAvant.off()
+                # feuxAvant.off()
                 print("Ruban bleu detecte -> arret de la sequence")
                 break
 
@@ -117,7 +117,7 @@ def main():
                 moteur.drive(VITESSE)
 
                 # Clignotants selon le sens du braquage
-                gerer_clignotants(feuxAvant, direction, angle_servo, maintenant)
+                # gerer_clignotants(feuxAvant, direction, angle_servo, maintenant)
 
             # 3) Ligne perdue
             else:
@@ -125,12 +125,12 @@ def main():
                     # On a deja vu la ligne : manoeuvre de recherche (recul droit)
                     direction.turn(direction.getAngleCenter())
                     moteur.reverse(VITESSE * 0.3)
-                    feuxAvant.warnings(maintenant)
+                    # feuxAvant.warnings(maintenant)
                     print("Ligne perdue -> recul de recherche")
                 else:
                     # Jamais vu la ligne encore : on attend
                     moteur.stop()
-                    feuxAvant.off()
+                    # feuxAvant.off()
 
     except KeyboardInterrupt:
         print("Arret manuel")
@@ -139,7 +139,7 @@ def main():
         moteur.reset()
         moteur.destroy()
         direction.reset()
-        feuxAvant.off()
+        # feuxAvant.off()
         camera.stop()
 
 if __name__ == "__main__":
