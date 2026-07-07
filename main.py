@@ -23,7 +23,7 @@ ZONE_MORTE = 40         # marge d'erreur (px) : en dessous -> robot considere ce
 GAIN_POSITION = 0.15    # correction basee sur l'ecart lateral
 GAIN_ANGLE = 0.40       # correction basee sur l'orientation de la ligne (anticipe les virages)
 SENS_SERVO = 1          # 1 ou -1 : a inverser si le robot braque du mauvais côté
-VITESSE = 30            # vitesse d'avance
+VITESSE = 35            # vitesse d'avance
 SEUIL_CLIGNOTANT = 15   # seuil (deg servo) au-dela duquel on allume un clignotant
 
 STREAMING = True
@@ -137,6 +137,9 @@ def resoudre_labyrinthe(camera, moteur, direction, feuxAvant=None):
 def detecter_fleches(camera, moteur, direction, feuxAvant=None):
     """Detection de fleches directionnelles. (a implementer)"""
     pass
+
+def suivi_ligne_noire():
+
 
 
 # ==========================================================================
