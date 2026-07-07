@@ -102,7 +102,7 @@ def main():
                 direction.reset()
                 # feuxAvant.off()
                 print("Ruban bleu detecte -> arret de la sequence")
-                
+                break
 
             # 2) Ligne detectee (mode complet OU degrade)
             if infos["ligne_detectee"]:
