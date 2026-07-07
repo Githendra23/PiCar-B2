@@ -2,6 +2,9 @@ import os
 import sys
 import time
 
+import classes.self_components.FeuxArriere as FeuxArriere
+import classes.self_components.FeuxAvant as FeuxAvant
+
 RACINE = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(RACINE, "fonctions"))
 from FluxVideo import FluxVideo
@@ -10,8 +13,8 @@ sys.path.append(os.path.join(RACINE, "classes"))
 from Moteur import Moteur
 from Direction import Direction
 from Tourelle import Tourelle
-import self_components.FeuxArriere as FeuxArriere
-import self_components.FeuxAvant as FeuxAvant
+
+
 
 # ==========================================================================
 # PARAMETRES DE PILOTAGE (a ajuster au test)
