@@ -32,8 +32,8 @@ SEUIL_CLIGNOTANT = 15   # seuil (deg servo) au-dela duquel on allume un clignota
 ANGLE_CENTRE = 80
 ANGLE_45_GAUCHE = 100     # virage doux gauche
 ANGLE_45_DROITE = 70      # virage doux droite
-ANGLE_FOND_GAUCHE = 110   # virage serre gauche
-ANGLE_FOND_DROITE = 60     # virage serre droite
+ANGLE_FOND_GAUCHE = 120   # virage serre gauche
+ANGLE_FOND_DROITE = 50     # virage serre droite
 VITESSE_RECUL = 15
 DELAI_AVANT_RECUL = 1.0   # secondes tout droit avant de reculer (perte en ligne droite)
 
