@@ -149,7 +149,7 @@ class FluxVideo:
           'image'           : l'image BGR (pour annotation/debug si besoin)
           'centre'          : x du centre de l'image
         """
-        image_bgr = self.picam2.capture_array()
+        image_bgr = cv2.cvtColor(self.picam2.capture_array(), cv2.COLOR_RGB2BGR)
 
         infos = {
             "bleu": False,
