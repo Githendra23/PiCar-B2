@@ -129,69 +129,88 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 # ==========================================================================
 def suivi_ligne_noire(capteur, moteur, direction):
     """
-    Suit une ligne noire avec les 3 capteurs IR (1 = noir, 0 = blanc).
-
-    - 3 capteurs sur le noir OU milieu seul  -> tout droit
-    - milieu + gauche                        -> virage doux gauche (45)
-    - milieu + droite                        -> virage doux droite (45)
-    - gauche seul                            -> virage serre gauche (fond)
-    - droite seul                            -> virage serre droite (fond)
-    - rien (0,0,0) = ligne perdue -> recuperation selon le dernier mouvement :
-        * perdue en ligne droite  -> continuer 1s puis reculer droit
-        * perdue en virage doux   -> roues droites + reculer
-        * perdue en virage serre  -> braquer a fond de l'AUTRE cote + reculer
+    Suit une ligne noire avec les 3 capteurs IR via une regulation incrementale.
+    L'angle de direction est ajuste progressivement pour eviter les a-coups.
     """
-    dernier_braquage = ANGLE_CENTRE
-    dernier_type = "droit"     # 'droit' | '45' | 'fond'
+    # Parametres de regulation angulaire
+    PAS_DOUX = 2            # Incrément pour une erreur legere
+    PAS_FORT = 5            # Incrément pour une erreur forte
+    PAS_RETOUR = 3          # Incrément pour le retour au centre
+    DELAI_MAJ = 0.02        # Delai (s) entre chaque calcul d'increment (20ms)
+
+    angle_courant = ANGLE_CENTRE
+    dernier_braquage_dir = "centre"   # Memorise le sens pour la recuperation ('gauche', 'droite')
+    dernier_type = "droit"            # Memorise l'intensite de la courbe ('droit', '45', 'fond')
     temps_perte = None
+    dernier_temps_maj = time.time()
 
     VITESSE = 25
     VITESSE_RECUL = 15
 
+    direction.turn(angle_courant)
 
     while True:
         gauche, milieu, droite = capteur.getState()
         ligne_visible = (gauche or milieu or droite)
+        maintenant = time.time()
 
         if ligne_visible:
             temps_perte = None
 
-            # --- Tout droit ---
-            if (milieu and not gauche and not droite) or (gauche and milieu and droite):
-                direction.turn(ANGLE_CENTRE)
+            # Execution de la regulation a intervalle regulier pour controler la vitesse de braquage
+            if maintenant - dernier_temps_maj >= DELAI_MAJ:
+                
+                # --- Alignement correct (centre ou 3 capteurs) ---
+                if (milieu and not gauche and not droite) or (gauche and milieu and droite):
+                    # Retour progressif vers l'angle central
+                    if angle_courant > ANGLE_CENTRE:
+                        angle_courant = max(ANGLE_CENTRE, angle_courant - PAS_RETOUR)
+                    elif angle_courant < ANGLE_CENTRE:
+                        angle_courant = min(ANGLE_CENTRE, angle_courant + PAS_RETOUR)
+                    
+                    dernier_type = "droit"
+                    dernier_braquage_dir = "centre"
+
+                # --- Ecart leger (milieu + un cote) ---
+                elif milieu and gauche:
+                    angle_courant = min(ANGLE_FOND_GAUCHE, angle_courant + PAS_DOUX)
+                    dernier_type = "45"
+                    dernier_braquage_dir = "gauche"
+                    
+                elif milieu and droite:
+                    angle_courant = max(ANGLE_FOND_DROITE, angle_courant - PAS_DOUX)
+                    dernier_type = "45"
+                    dernier_braquage_dir = "droite"
+
+                # --- Ecart important (un seul cote) ---
+                elif gauche and not milieu and not droite:
+                    angle_courant = min(ANGLE_FOND_GAUCHE, angle_courant + PAS_FORT)
+                    dernier_type = "fond"
+                    dernier_braquage_dir = "gauche"
+                    
+                elif droite and not milieu and not gauche:
+                    angle_courant = max(ANGLE_FOND_DROITE, angle_courant - PAS_FORT)
+                    dernier_type = "fond"
+                    dernier_braquage_dir = "droite"
+
+                dernier_temps_maj = maintenant
+
+            # Application de l'angle calcule
+            direction.turn(angle_courant)
+
+            # Ajustement dynamique de la vitesse selon la contrainte de la trajectoire
+            if dernier_type == "droit":
                 moteur.drive(VITESSE)
-                dernier_braquage = ANGLE_CENTRE
-                dernier_type = "droit"
-
-            # --- Virage doux (milieu + un cote) ---
-            elif milieu and gauche:
-                direction.turn(ANGLE_45_GAUCHE)
-                moteur.drive(VITESSE * 0.8)
-                dernier_braquage = ANGLE_45_GAUCHE
-                dernier_type = "45"
-            elif milieu and droite:
-                direction.turn(ANGLE_45_DROITE)
-                moteur.drive(VITESSE * 0.8)
-                dernier_braquage = ANGLE_45_DROITE
-                dernier_type = "45"
-
-            # --- Virage serre (un seul cote, sans milieu) ---
-            elif gauche and not milieu and not droite:
-                direction.turn(ANGLE_FOND_GAUCHE)
-                moteur.drive(VITESSE * 0.65)
-                dernier_braquage = ANGLE_FOND_GAUCHE
-                dernier_type = "fond"
-            elif droite and not milieu and not gauche:
-                direction.turn(ANGLE_FOND_DROITE)
-                moteur.drive(VITESSE * 0.65)
-                dernier_braquage = ANGLE_FOND_DROITE
-                dernier_type = "fond"
+            elif dernier_type == "45":
+                moteur.drive(int(VITESSE * 0.8))
+            elif dernier_type == "fond":
+                moteur.drive(int(VITESSE * 0.65))
 
         else:
-            # --- Ligne perdue : recuperation ---
+            # --- Strategie de recuperation (ligne perdue) ---
             if temps_perte is None:
-                temps_perte = time.time()
-            temps_ecoule = time.time() - temps_perte
+                temps_perte = maintenant
+            temps_ecoule = maintenant - temps_perte
 
             if dernier_type == "droit":
                 if temps_ecoule < DELAI_AVANT_RECUL:
@@ -206,8 +225,8 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 moteur.reverse(VITESSE_RECUL)
 
             elif dernier_type == "fond":
-                # braquer a fond de l'AUTRE cote + reculer
-                if dernier_braquage == ANGLE_FOND_GAUCHE:
+                # Braquage maximal oppose pour rattraper l'angle de fuite
+                if dernier_braquage_dir == "gauche":
                     direction.turn(ANGLE_FOND_DROITE)
                 else:
                     direction.turn(ANGLE_FOND_GAUCHE)
