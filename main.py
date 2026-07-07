@@ -100,6 +100,7 @@ def main():
     except KeyboardInterrupt:
         print("Arret manuel")
     finally:
+        moteur.reset()
         moteur.destroy()
         direction.reset()
         camera.stop()
