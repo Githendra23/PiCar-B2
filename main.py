@@ -127,16 +127,16 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 # ==========================================================================
 # MISSION : SUIVI DE LIGNE NOIRE (capteur IR 3 voies)
 # ==========================================================================
-ddef suivi_ligne_noire(capteur, moteur, direction):
+def suivi_ligne_noire(capteur, moteur, direction):
     """
-    Suit une ligne noire avec les 3 capteurs IR.
-    - Écart léger (2 capteurs) : ajustement incrémental et fluide.
-    - Écart critique (1 seul capteur) : braquage à fond immédiat pour les virages serrés.
+    Suit une ligne noire avec les 3 capteurs IR via une regulation incrementale.
+    L'angle de direction est ajuste progressivement pour eviter les a-coups.
     """
     # Parametres de regulation angulaire
-    PAS_DOUX = 3            # Ajustement progressif pour virage leger
-    PAS_RETOUR = 4          # Vitesse de retour en ligne droite
-    DELAI_MAJ = 0.02        # Verification de la trajectoire toutes les 20ms
+    PAS_DOUX = 2            # Incrément pour une erreur legere
+    PAS_FORT = 15            # Incrément pour une erreur forte
+    PAS_RETOUR = 3          # Incrément pour le retour au centre
+    DELAI_MAJ = 0.00        # Delai (s) entre chaque calcul d'increment (20ms)
 
     angle_courant = ANGLE_CENTRE
     dernier_braquage_dir = "centre"   # Memorise le sens pour la recuperation ('gauche', 'droite')
@@ -157,12 +157,12 @@ ddef suivi_ligne_noire(capteur, moteur, direction):
         if ligne_visible:
             temps_perte = None
 
-            # Execution de la logique à intervalle regulier pour le mode incremental
+            # Execution de la regulation a intervalle regulier pour controler la vitesse de braquage
             if maintenant - dernier_temps_maj >= DELAI_MAJ:
                 
-                # --- 1) Alignement nominal (centre ou 3 capteurs sur la ligne) ---
+                # --- Alignement correct (centre ou 3 capteurs) ---
                 if (milieu and not gauche and not droite) or (gauche and milieu and droite):
-                    # On ramene progressivement les roues vers le centre
+                    # Retour progressif vers l'angle central
                     if angle_courant > ANGLE_CENTRE:
                         angle_courant = max(ANGLE_CENTRE, angle_courant - PAS_RETOUR)
                     elif angle_courant < ANGLE_CENTRE:
@@ -171,7 +171,7 @@ ddef suivi_ligne_noire(capteur, moteur, direction):
                     dernier_type = "droit"
                     dernier_braquage_dir = "centre"
 
-                # --- 2) Écart léger (milieu + un cote) : MODE INCREMENTAL ---
+                # --- Ecart leger (milieu + un cote) ---
                 elif milieu and gauche:
                     angle_courant = min(ANGLE_FOND_GAUCHE, angle_courant + PAS_DOUX)
                     dernier_type = "45"
@@ -182,23 +182,23 @@ ddef suivi_ligne_noire(capteur, moteur, direction):
                     dernier_type = "45"
                     dernier_braquage_dir = "droite"
 
-                # --- 3) Écart critique (un seul cote) : BRAQUAGE DIRECT A FOND ---
+                # --- Ecart important (un seul cote) ---
                 elif gauche and not milieu and not droite:
-                    angle_courant = ANGLE_FOND_GAUCHE  # Saut instantane au maximum
+                    angle_courant = min(ANGLE_FOND_GAUCHE, angle_courant + PAS_FORT)
                     dernier_type = "fond"
                     dernier_braquage_dir = "gauche"
                     
                 elif droite and not milieu and not gauche:
-                    angle_courant = ANGLE_FOND_DROITE  # Saut instantane au maximum
+                    angle_courant = max(ANGLE_FOND_DROITE, angle_courant - PAS_FORT)
                     dernier_type = "fond"
                     dernier_braquage_dir = "droite"
 
                 dernier_temps_maj = maintenant
 
-            # Application de l'angle sur le servo
+            # Application de l'angle calcule
             direction.turn(angle_courant)
 
-            # Gestion de la vitesse selon la severite du virage
+            # Ajustement dynamique de la vitesse selon la contrainte de la trajectoire
             if dernier_type == "droit":
                 moteur.drive(VITESSE)
             elif dernier_type == "45":
@@ -207,7 +207,7 @@ ddef suivi_ligne_noire(capteur, moteur, direction):
                 moteur.drive(int(VITESSE * 0.65))
 
         else:
-            # --- 4) Strategie de recuperation si la ligne est perdue ---
+            # --- Strategie de recuperation (ligne perdue) ---
             if temps_perte is None:
                 temps_perte = maintenant
             temps_ecoule = maintenant - temps_perte
@@ -225,7 +225,7 @@ ddef suivi_ligne_noire(capteur, moteur, direction):
                 moteur.reverse(VITESSE_RECUL)
 
             elif dernier_type == "fond":
-                # Braquage speculaire (oppose a la fuite) pour intercepter le ruban au recul
+                # Braquage maximal oppose pour rattraper l'angle de fuite
                 if dernier_braquage_dir == "gauche":
                     direction.turn(ANGLE_FOND_DROITE)
                 else:
