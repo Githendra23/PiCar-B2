@@ -81,7 +81,7 @@ class Robot :
         speed = 35
         reverse_speed = 15
         MOST_LEFT = 100
-        MID_LEFT = 80
+        MID_LEFT = 100
         MID_RIGHT = 30
         MOST_RIGHT = 50
 
