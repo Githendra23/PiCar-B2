@@ -145,8 +145,8 @@ def suivi_ligne_noire(capteur, moteur, direction):
     dernier_type = "droit"     # 'droit' | '45' | 'fond'
     temps_perte = None
 
-    VITESSE = 25
-    VITESSE_RECUL = 20
+    VITESSE = 20
+    VITESSE_RECUL = 15
 
 
     while True:
