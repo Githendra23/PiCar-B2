@@ -123,7 +123,7 @@ def main():
                 if ligne_deja_detectee:
                     # On a deja vu la ligne : manoeuvre de recherche (recul droit)
                     direction.turn(direction.getAngleCenter())
-                    moteur.reverse(VITESSE * 0.3)
+                    moteur.reverse(VITESSE * 0.5)
                     # feuxAvant.warnings(maintenant)
                     print("Ligne perdue -> recul de recherche")
                 else:
