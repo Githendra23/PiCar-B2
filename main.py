@@ -145,8 +145,8 @@ def suivi_ligne_noire(capteur, moteur, direction):
     dernier_type = "droit"     # 'droit' | '45' | 'fond'
     temps_perte = None
 
-    VITESSE = 30
-    VITESSE_RECUL = 20
+    VITESSE = 25
+    VITESSE_RECUL = 15
 
 
     while True:
@@ -166,24 +166,24 @@ def suivi_ligne_noire(capteur, moteur, direction):
             # --- Virage doux (milieu + un cote) ---
             elif milieu and gauche:
                 direction.turn(ANGLE_45_GAUCHE)
-                moteur.drive(VITESSE * 0.7)
+                moteur.drive(VITESSE * 0.8)
                 dernier_braquage = ANGLE_45_GAUCHE
                 dernier_type = "45"
             elif milieu and droite:
                 direction.turn(ANGLE_45_DROITE)
-                moteur.drive(VITESSE * 0.7)
+                moteur.drive(VITESSE * 0.8)
                 dernier_braquage = ANGLE_45_DROITE
                 dernier_type = "45"
 
             # --- Virage serre (un seul cote, sans milieu) ---
             elif gauche and not milieu and not droite:
                 direction.turn(ANGLE_FOND_GAUCHE)
-                moteur.drive(VITESSE * 0.3)
+                moteur.drive(VITESSE * 0.5)
                 dernier_braquage = ANGLE_FOND_GAUCHE
                 dernier_type = "fond"
             elif droite and not milieu and not gauche:
                 direction.turn(ANGLE_FOND_DROITE)
-                moteur.drive(VITESSE * 0.3)
+                moteur.drive(VITESSE * 0.5)
                 dernier_braquage = ANGLE_FOND_DROITE
                 dernier_type = "fond"
 
