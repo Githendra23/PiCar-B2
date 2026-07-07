@@ -80,9 +80,9 @@ class Robot :
     def suiviLigne(self) :
         speed = 35
         reverse_speed = 15
-        MOST_LEFT = 130
-        MID_LEFT = 110
-        MID_RIGHT = 70
+        MOST_LEFT = 100
+        MID_LEFT = 80
+        MID_RIGHT = 30
         MOST_RIGHT = 50
 
         self.stopEngine()
