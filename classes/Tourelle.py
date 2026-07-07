@@ -1,7 +1,7 @@
 import time
 
 import self_components.CapteurUltrason as CapteurUltrason
-import ServoController
+from ServoController import ServoController
 
 ANGLE_MAX = 180
 ANGLE_MIN = 0
@@ -15,7 +15,7 @@ class Tourelle:
         self.CHANNEL_X_AXIS = 1 # horizontal
         self.CHANNEL_Y_AXIS = 2 # vertical
         
-        self.controller = ServoController.ServoController()
+        self.controller = ServoController()
         self.controller.add_servo(self.CHANNEL_X_AXIS)
         self.controller.add_servo(self.CHANNEL_Y_AXIS)
         
@@ -89,7 +89,6 @@ class Tourelle:
                 print("0",end="")
         print("")
 
-    # Renvoie la distance obtenue par le capteur ultrason
     def getDistance(self) :
         return self.capteurUltrason.distance()
 
