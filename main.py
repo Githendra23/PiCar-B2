@@ -27,7 +27,7 @@ SENS_SERVO = 1          # 1 ou -1 : a inverser si le robot braque du mauvais cô
 VITESSE = 50            # vitesse d'avance
 SEUIL_CLIGNOTANT = 15   # seuil (deg servo) au-dela duquel on allume un clignotant
 
-STREAMING = True
+STREAMING = False
 
 
 # ==========================================================================
