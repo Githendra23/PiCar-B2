@@ -10,6 +10,7 @@ import Direction
 import Moteur
 import Tourelle
 
+RACINE = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(RACINE, "self_components"))
 import FeuxAvant as FeuxAvant
 import FeuxArriere as FeuxArriere
