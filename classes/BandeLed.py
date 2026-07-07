@@ -14,10 +14,10 @@ class BandeLed(threading.Thread):
 
     def __init__(self, count=8, bright=255, sequence='GRB', bus=0, device=0,
                  *args, **kwargs):
-        self.__set_led_type(sequence)
-        self.__set_led_count(count)
+        self._set_led_type(sequence)
+        self._set_led_count(count)
         self.set_led_brightness(bright)
-        self.__led_begin(bus, device)
+        self._led_begin(bus, device)
         self.lightMode = 'none'
         self.colorBreathR = 0
         self.colorBreathG = 0
@@ -28,7 +28,7 @@ class BandeLed(threading.Thread):
         self._flag = threading.Event()
         self._flag.clear()
 
-    def __led_begin(self, bus=0, device=0):
+    def _led_begin(self, bus=0, device=0):
         self.bus = bus
         self.device = device
 
@@ -55,12 +55,12 @@ class BandeLed(threading.Thread):
         self.set_all_led_rgb([0, 0, 0])
         self.spi.close()
 
-    def __set_led_count(self, count):
+    def _set_led_count(self, count):
         self.led_count = count
         self.led_color = [0, 0, 0] * self.led_count
         self.led_original_color = [0, 0, 0] * self.led_count
 
-    def __set_led_type(self, rgb_type):
+    def _set_led_type(self, rgb_type):
         try:
             led_type = ['RGB', 'RBG', 'GRB', 'GBR', 'BRG', 'BGR']
             led_type_offset = [0x06, 0x09, 0x12, 0x21, 0x18, 0x24]
@@ -85,7 +85,7 @@ class BandeLed(threading.Thread):
         for i in range(self.led_count):
             self.set_led_rgb_data(i, self.led_original_color)
 
-    def __set_ledpixel(self, index, r, g, b):
+    def _set_ledpixel(self, index, r, g, b):
         p = [0, 0, 0]
         p[self.led_red_offset] = round(r * self.led_brightness / 255)
         p[self.led_green_offset] = round(g * self.led_brightness / 255)
@@ -98,10 +98,10 @@ class BandeLed(threading.Thread):
             self.led_color[index * 3 + i] = p[i]
 
     def set_led_color_data(self, index, r, g, b):
-        self.__set_ledpixel(index, r, g, b)
+        self._set_ledpixel(index, r, g, b)
 
     def set_led_rgb_data(self, index, color):
-        self.__set_ledpixel(index, color[0], color[1], color[2])
+        self._set_ledpixel(index, color[0], color[1], color[2])
 
     def set_all_led_color_data(self, r, g, b):
         for i in range(self.led_count):

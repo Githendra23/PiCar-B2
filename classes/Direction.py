@@ -1,10 +1,11 @@
 import ServoController
-
-import time
+import FeuxAvant
 
 class Direction:
     def __init__(self):
         self.servo = ServoController.ServoController()
+        self.feux = FeuxAvant.FeuxAvant()
+
         self.CHANNEL = 0
 
         self.ANGLE_MIN = 0
