@@ -134,12 +134,12 @@ def suivi_ligne_noire(capteur, moteur, direction):
     # --- Suivi de ligne NOIRE (capteur IR) : angles de braquage ---
     # Convention servo : turn(0) = droite, turn(90) = centre, turn(130) = gauche
     ANGLE_CENTRE = 90
-    ANGLE_45_GAUCHE = 105     # virage doux gauche
-    ANGLE_45_DROITE = 75      # virage doux droite
-    ANGLE_FOND_GAUCHE = 120   # virage serre gauche
+    ANGLE_45_GAUCHE = 100     # virage doux gauche
+    ANGLE_45_DROITE = 80      # virage doux droite
+    ANGLE_FOND_GAUCHE = 130   # virage serre gauche
     ANGLE_FOND_DROITE = 50     # virage serre droite
     VITESSE_RECUL = 15
-    DELAI_AVANT_RECUL = 1.0   # secondes tout droit avant de reculer (perte en ligne droite)
+    DELAI_AVANT_RECUL = 2.0   # secondes tout droit avant de reculer (perte en ligne droite)
     VITESSE = 20
     
     dernier_braquage = ANGLE_CENTRE
