@@ -35,7 +35,7 @@ ANGLE_45_DROITE = 70      # virage doux droite
 ANGLE_FOND_GAUCHE = 120   # virage serre gauche
 ANGLE_FOND_DROITE = 50     # virage serre droite
 VITESSE_RECUL = 15
-DELAI_AVANT_RECUL = 1.0   # secondes tout droit avant de reculer (perte en ligne droite)
+DELAI_AVANT_RECUL = 2.0   # secondes tout droit avant de reculer (perte en ligne droite)
 
 STREAMING = False
 
