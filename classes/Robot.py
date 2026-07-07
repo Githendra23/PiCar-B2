@@ -285,7 +285,7 @@ if __name__ == '__main__':
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
-        robot.analyseObstacle()
+        robot.suiviLigne()
 
         # while True :
         #     angleX = int(input("Angle : "))
