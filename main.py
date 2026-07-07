@@ -29,11 +29,11 @@ SEUIL_CLIGNOTANT = 15   # seuil (deg servo) au-dela duquel on allume un clignota
 
 # --- Suivi de ligne NOIRE (capteur IR) : angles de braquage ---
 # Convention servo : turn(0) = droite, turn(90) = centre, turn(130) = gauche
-ANGLE_CENTRE = 90
-ANGLE_45_GAUCHE = 115     # virage doux gauche
-ANGLE_45_DROITE = 45      # virage doux droite
-ANGLE_FOND_GAUCHE = 130   # virage serre gauche
-ANGLE_FOND_DROITE = 0     # virage serre droite
+ANGLE_CENTRE = 80
+ANGLE_45_GAUCHE = 100     # virage doux gauche
+ANGLE_45_DROITE = 70      # virage doux droite
+ANGLE_FOND_GAUCHE = 110   # virage serre gauche
+ANGLE_FOND_DROITE = 60     # virage serre droite
 VITESSE_RECUL = 15
 DELAI_AVANT_RECUL = 1.0   # secondes tout droit avant de reculer (perte en ligne droite)
 

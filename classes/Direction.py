@@ -10,7 +10,7 @@ class Direction:
 
         self.ANGLE_MIN = 50 # droite
         self.ANGLE_MAX = 130 # gauche
-        self.ANGLE_CENTER = 90
+        self.ANGLE_CENTER = 80
 
         self.servo.add_servo(self.CHANNEL)
         self.reset()
