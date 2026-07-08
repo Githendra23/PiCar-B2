@@ -49,7 +49,7 @@ class Moteur:
 
         diff = abs(self.current_speed - speed)
         if(diff >= 30) :
-            print("Progressif")
+            # print("Progressif")
             self.progress_start(speed,1)
         else :
             self.moteur.throttle = map(speed, 0, 100, 0, 1.0)
@@ -64,7 +64,7 @@ class Moteur:
 
         diff = abs(self.current_speed - speed)
         if(diff >= 30) :
-            print("Progressif")
+            # print("Progressif")
             self.progress_start(speed,-1)
         else :
             self.moteur.throttle = -map(speed, 0, 100, 0, 1.0)

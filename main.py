@@ -120,96 +120,107 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 def suivi_ligne_noire(capteur, moteur, direction):
     """
     Suit une ligne noire avec les 3 capteurs IR (1 = noir, 0 = blanc).
-    Gère les lignes discontinues droites en maintenant le cap pendant les coupures.
+ 
+    - Ligne discontinue possible UNIQUEMENT en ligne droite : si on perd la ligne
+      alors qu'on allait tout droit, on maintient le cap un court instant pour
+      franchir le trou. En virage, une perte = vraie sortie -> recuperation immediate.
+    - Optimisation reactivite : on n'envoie un ordre au moteur/servo que lorsqu'il
+      CHANGE (evite de spammer drive()/turn() a chaque tour, ce qui ralentit la boucle).
     """
-    # --- Configuration des angles de braquage et constantes ---
     ANGLE_CENTRE = 90
-    ANGLE_45_GAUCHE = 100     # Virage doux gauche
-    ANGLE_45_DROITE = 80      # Virage doux droite
-    ANGLE_FOND_GAUCHE = 140   # Virage serré gauche
-    ANGLE_FOND_DROITE = 40    # Virage serré droite
-    
+    ANGLE_45_GAUCHE = 100     # virage doux gauche
+    ANGLE_45_DROITE = 80      # virage doux droite
+    ANGLE_FOND_GAUCHE = 140   # virage serre gauche
+    ANGLE_FOND_DROITE = 40    # virage serre droite
+ 
     VITESSE = 20
     VITESSE_RECUL = 15
-    DELAI_GAP_BLANC = 1.2     # Temps (secondes) maximal autorisé pour franchir l'espace blanc
-    
+    DELAI_GAP_BLANC = 1.2     # secondes de maintien du cap sur un trou (ligne droite only)
+ 
     dernier_braquage = ANGLE_CENTRE
-    dernier_type = "droit"     # 'droit' | '45' | 'fond'
+    dernier_type = "droit"    # 'droit' | '45' | 'fond'
     temps_perte = None
-
+ 
+    # Memoire des derniers ordres envoyes (pour ne renvoyer que si ca change)
+    angle_actuel = None
+    vitesse_actuelle = None
+    sens_actuel = None        # 'avant' | 'arriere'
+ 
+    def appliquer(angle, vitesse, sens):
+        """Envoie les ordres au servo/moteur SEULEMENT s'ils ont change."""
+        nonlocal angle_actuel, vitesse_actuelle, sens_actuel
+        if angle != angle_actuel:
+            direction.turn(angle)
+            angle_actuel = angle
+        if vitesse != vitesse_actuelle or sens != sens_actuel:
+            if sens == "avant":
+                moteur.drive(vitesse)
+            else:
+                moteur.reverse(vitesse)
+            vitesse_actuelle = vitesse
+            sens_actuel = sens
+ 
     while True:
         gauche, milieu, droite = capteur.getState()
-
-        # print(f"gauche : ${gauche}, milieu : ${milieu}, droite : ${droite}")
-
         ligne_visible = (gauche or milieu or droite)
-
+ 
         if ligne_visible:
-            # Réinitialisation immédiate dès qu'un segment noir réapparaît
             temps_perte = None
-
+ 
             # --- Tout droit ---
-            if (milieu and not gauche and not droite) or (gauche and milieu and droite) or (droite and gauche and not milieu):
-                direction.turn(ANGLE_CENTRE)
-                moteur.drive(VITESSE)
+            if (milieu and not gauche and not droite) \
+               or (gauche and milieu and droite) \
+               or (droite and gauche and not milieu):
+                appliquer(ANGLE_CENTRE, VITESSE, "avant")
                 dernier_braquage = ANGLE_CENTRE
                 dernier_type = "droit"
-
+ 
             # --- Virage doux (milieu + un cote) ---
             elif milieu and gauche:
-                direction.turn(ANGLE_45_GAUCHE)
-                moteur.drive(int(VITESSE * 0.8))
+                appliquer(ANGLE_45_GAUCHE, int(VITESSE * 0.8), "avant")
                 dernier_braquage = ANGLE_45_GAUCHE
                 dernier_type = "45"
             elif milieu and droite:
-                direction.turn(ANGLE_45_DROITE)
-                moteur.drive(int(VITESSE * 0.8))
+                appliquer(ANGLE_45_DROITE, int(VITESSE * 0.8), "avant")
                 dernier_braquage = ANGLE_45_DROITE
                 dernier_type = "45"
-
+ 
             # --- Virage serre (un seul cote, sans milieu) ---
             elif gauche and not milieu and not droite:
-                direction.turn(ANGLE_FOND_GAUCHE)
-                moteur.drive(int(VITESSE))
+                appliquer(ANGLE_FOND_GAUCHE, VITESSE, "avant")
                 dernier_braquage = ANGLE_FOND_GAUCHE
                 dernier_type = "fond"
             elif droite and not milieu and not gauche:
-                direction.turn(ANGLE_FOND_DROITE)
-                moteur.drive(int(VITESSE))
+                appliquer(ANGLE_FOND_DROITE, VITESSE, "avant")
                 dernier_braquage = ANGLE_FOND_DROITE
                 dernier_type = "fond"
-
+ 
         else:
-            # --- Gestion de l'espace blanc (Ligne discontinue) ---
-            if temps_perte is None:
-                temps_perte = time.time()  # Initialisation du chronomètre au début de la coupure
-            
-            temps_ecoule = time.time() - temps_perte
-
-            if temps_ecoule < DELAI_GAP_BLANC:
-                # Comportement conservateur : on force les roues droites et on avance pour franchir l'interruption
-                direction.turn(ANGLE_CENTRE)
-                moteur.drive(VITESSE)
+            # --- Ligne perdue ---
+            if dernier_type == "droit":
+                # Perte en ligne droite : ce peut etre un trou (ligne discontinue).
+                # On maintient le cap un court instant pour le franchir.
+                if temps_perte is None:
+                    temps_perte = time.time()
+                if time.time() - temps_perte < DELAI_GAP_BLANC:
+                    appliquer(ANGLE_CENTRE, VITESSE, "avant")
+                else:
+                    # Trop long -> vraie perte -> reculer droit
+                    appliquer(ANGLE_CENTRE, VITESSE_RECUL, "arriere")
             else:
-                # Si le délai est dépassé, la ligne est réellement perdue (fin de piste ou sortie de route)
-                # On applique la stratégie de secours selon le contexte précédent le gap
-                if dernier_type == "droit":
-                    direction.turn(ANGLE_CENTRE)
-                    moteur.reverse(VITESSE_RECUL)
-
-                elif dernier_type == "45":
-                    direction.turn(ANGLE_CENTRE)
-                    moteur.reverse(VITESSE_RECUL)
-
+                # Perte en VIRAGE : pas de discontinuite ici -> vraie sortie.
+                # Recuperation immediate, sans attendre.
+                if dernier_type == "45":
+                    appliquer(ANGLE_CENTRE, VITESSE_RECUL, "arriere")
                 elif dernier_type == "fond":
-                    # Contre-braquage pour tenter de reculer sur la dernière position connue de la ligne
+                    # contre-braquage : on recule en braquant a fond de l'autre cote
                     if dernier_braquage == ANGLE_FOND_GAUCHE:
-                        direction.turn(ANGLE_FOND_DROITE)
+                        appliquer(ANGLE_FOND_DROITE, VITESSE_RECUL, "arriere")
                     else:
-                        direction.turn(ANGLE_FOND_GAUCHE)
-                    moteur.reverse(VITESSE_RECUL)
+                        appliquer(ANGLE_FOND_GAUCHE, VITESSE_RECUL, "arriere")
+ 
+        time.sleep(0.01)
 
-    time.sleep(0.01)
 
 # ==========================================================================
 # MISSIONS A VENIR
