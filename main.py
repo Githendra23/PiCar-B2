@@ -127,7 +127,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
     ANGLE_45_GAUCHE = 100     # Virage doux gauche
     ANGLE_45_DROITE = 80      # Virage doux droite
     ANGLE_FOND_GAUCHE = 140   # Virage serré gauche
-    ANGLE_FOND_DROITE = 50    # Virage serré droite
+    ANGLE_FOND_DROITE = 40    # Virage serré droite
     
     VITESSE = 20
     VITESSE_RECUL = 15
