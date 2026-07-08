@@ -129,7 +129,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
     ANGLE_FOND_GAUCHE = 140   # Virage serré gauche
     ANGLE_FOND_DROITE = 50    # Virage serré droite
     
-    VITESSE = 25
+    VITESSE = 20
     VITESSE_RECUL = 15
     DELAI_GAP_BLANC = 1.2     # Temps (secondes) maximal autorisé pour franchir l'espace blanc
     
@@ -158,24 +158,24 @@ def suivi_ligne_noire(capteur, moteur, direction):
             # --- Virage doux (milieu + un cote) ---
             elif milieu and gauche:
                 direction.turn(ANGLE_45_GAUCHE)
-                moteur.drive(int(VITESSE * 0.7))
+                moteur.drive(int(VITESSE * 0.8))
                 dernier_braquage = ANGLE_45_GAUCHE
                 dernier_type = "45"
             elif milieu and droite:
                 direction.turn(ANGLE_45_DROITE)
-                moteur.drive(int(VITESSE * 0.7))
+                moteur.drive(int(VITESSE * 0.8))
                 dernier_braquage = ANGLE_45_DROITE
                 dernier_type = "45"
 
             # --- Virage serre (un seul cote, sans milieu) ---
             elif gauche and not milieu and not droite:
                 direction.turn(ANGLE_FOND_GAUCHE)
-                moteur.drive(int(VITESSE * 0.6))
+                moteur.drive(int(VITESSE * 0.7))
                 dernier_braquage = ANGLE_FOND_GAUCHE
                 dernier_type = "fond"
             elif droite and not milieu and not gauche:
                 direction.turn(ANGLE_FOND_DROITE)
-                moteur.drive(int(VITESSE * 0.6))
+                moteur.drive(int(VITESSE * 0.7))
                 dernier_braquage = ANGLE_FOND_DROITE
                 dernier_type = "fond"
 
