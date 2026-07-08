@@ -120,32 +120,37 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 def suivi_ligne_noire(capteur, moteur, direction):
     """
     Suit une ligne noire avec les 3 capteurs IR (1 = noir, 0 = blanc).
- 
-    - Ligne discontinue possible UNIQUEMENT en ligne droite : si on perd la ligne
-      alors qu'on allait tout droit, on maintient le cap un court instant pour
-      franchir le trou. En virage, une perte = vraie sortie -> recuperation immediate.
-    - Optimisation reactivite : on n'envoie un ordre au moteur/servo que lorsqu'il
-      CHANGE (evite de spammer drive()/turn() a chaque tour, ce qui ralentit la boucle).
+
+    Distinction TROU vs VIRAGE (le point cle) :
+      - Si, juste avant de tout perdre (0,0,0), le capteur du MILIEU tenait encore
+        la ligne -> la ligne etait centree puis a disparu d'un coup -> c'est un TROU
+        (ligne discontinue) -> on maintient le cap pour le franchir.
+      - Si le milieu ne voyait deja plus la ligne (on partait sur un cote) -> c'est
+        une sortie de VIRAGE -> recuperation immediate.
+
+    Optimisation reactivite : on n'envoie un ordre au moteur/servo que lorsqu'il
+    CHANGE (evite de spammer drive()/turn() a chaque tour).
     """
     ANGLE_CENTRE = 90
     ANGLE_45_GAUCHE = 100     # virage doux gauche
     ANGLE_45_DROITE = 80      # virage doux droite
     ANGLE_FOND_GAUCHE = 140   # virage serre gauche
     ANGLE_FOND_DROITE = 40    # virage serre droite
- 
+
     VITESSE = 20
     VITESSE_RECUL = 15
-    DELAI_GAP_BLANC = 1.2     # secondes de maintien du cap sur un trou (ligne droite only)
- 
+    DELAI_GAP_BLANC = 1.2     # secondes max pour franchir un trou
+
     dernier_braquage = ANGLE_CENTRE
-    dernier_type = "droit"    # 'droit' | '45' | 'fond'
+    dernier_type = "droit"          # 'droit' | '45' | 'fond'
+    dernier_etat = (0, 1, 0)        # dernier etat des capteurs quand la ligne etait visible
     temps_perte = None
- 
+
     # Memoire des derniers ordres envoyes (pour ne renvoyer que si ca change)
     angle_actuel = None
     vitesse_actuelle = None
-    sens_actuel = None        # 'avant' | 'arriere'
- 
+    sens_actuel = None              # 'avant' | 'arriere'
+
     def appliquer(angle, vitesse, sens):
         """Envoie les ordres au servo/moteur SEULEMENT s'ils ont change."""
         nonlocal angle_actuel, vitesse_actuelle, sens_actuel
@@ -159,14 +164,15 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 moteur.reverse(vitesse)
             vitesse_actuelle = vitesse
             sens_actuel = sens
- 
+
     while True:
         gauche, milieu, droite = capteur.getState()
         ligne_visible = (gauche or milieu or droite)
- 
+
         if ligne_visible:
             temps_perte = None
- 
+            dernier_etat = (gauche, milieu, droite)   # on memorise ce dernier etat vu
+
             # --- Tout droit ---
             if (milieu and not gauche and not droite) \
                or (gauche and milieu and droite) \
@@ -174,7 +180,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 appliquer(ANGLE_CENTRE, VITESSE, "avant")
                 dernier_braquage = ANGLE_CENTRE
                 dernier_type = "droit"
- 
+
             # --- Virage doux (milieu + un cote) ---
             elif milieu and gauche:
                 appliquer(ANGLE_45_GAUCHE, int(VITESSE * 0.8), "avant")
@@ -184,7 +190,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 appliquer(ANGLE_45_DROITE, int(VITESSE * 0.8), "avant")
                 dernier_braquage = ANGLE_45_DROITE
                 dernier_type = "45"
- 
+
             # --- Virage serre (un seul cote, sans milieu) ---
             elif gauche and not milieu and not droite:
                 appliquer(ANGLE_FOND_GAUCHE, VITESSE, "avant")
@@ -194,31 +200,31 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 appliquer(ANGLE_FOND_DROITE, VITESSE, "avant")
                 dernier_braquage = ANGLE_FOND_DROITE
                 dernier_type = "fond"
- 
+
         else:
-            # --- Ligne perdue ---
-            if dernier_type == "droit":
-                # Perte en ligne droite : ce peut etre un trou (ligne discontinue).
-                # On maintient le cap un court instant pour le franchir.
+            # --- Ligne perdue (0,0,0) : trou ou sortie de virage ? ---
+            _, milieu_avant, _ = dernier_etat
+
+            if milieu_avant:
+                # Le milieu tenait encore la ligne juste avant -> TROU (ligne discontinue)
+                # On maintient le cap pour franchir le trou.
                 if temps_perte is None:
                     temps_perte = time.time()
                 if time.time() - temps_perte < DELAI_GAP_BLANC:
                     appliquer(ANGLE_CENTRE, VITESSE, "avant")
                 else:
-                    # Trop long -> vraie perte -> reculer droit
+                    # Trou trop long -> vraie perte -> reculer droit
                     appliquer(ANGLE_CENTRE, VITESSE_RECUL, "arriere")
             else:
-                # Perte en VIRAGE : pas de discontinuite ici -> vraie sortie.
-                # Recuperation immediate, sans attendre.
-                if dernier_type == "45":
+                # Le milieu ne voyait deja plus la ligne -> sortie de VIRAGE
+                # Recuperation immediate selon le dernier braquage.
+                if dernier_braquage == ANGLE_FOND_GAUCHE:
+                    appliquer(ANGLE_FOND_DROITE, VITESSE_RECUL, "arriere")
+                elif dernier_braquage == ANGLE_FOND_DROITE:
+                    appliquer(ANGLE_FOND_GAUCHE, VITESSE_RECUL, "arriere")
+                else:
                     appliquer(ANGLE_CENTRE, VITESSE_RECUL, "arriere")
-                elif dernier_type == "fond":
-                    # contre-braquage : on recule en braquant a fond de l'autre cote
-                    if dernier_braquage == ANGLE_FOND_GAUCHE:
-                        appliquer(ANGLE_FOND_DROITE, VITESSE_RECUL, "arriere")
-                    else:
-                        appliquer(ANGLE_FOND_GAUCHE, VITESSE_RECUL, "arriere")
- 
+
         time.sleep(0.01)
 
 
