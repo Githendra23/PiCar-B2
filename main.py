@@ -140,7 +140,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
     while True:
         gauche, milieu, droite = capteur.getState()
 
-        print(f"gauche : ${gauche}, milieu : ${milieu}, droite : ${droite}")
+        # print(f"gauche : ${gauche}, milieu : ${milieu}, droite : ${droite}")
 
         ligne_visible = (gauche or milieu or droite)
 
@@ -209,6 +209,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
                         direction.turn(ANGLE_FOND_GAUCHE)
                     moteur.reverse(VITESSE_RECUL)
 
+    time.sleep(0.01)
 
 # ==========================================================================
 # MISSIONS A VENIR
