@@ -120,37 +120,37 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
 def suivi_ligne_noire(capteur, moteur, direction):
     """
     Suit une ligne noire avec les 3 capteurs IR (1 = noir, 0 = blanc).
-
-    Distinction TROU vs VIRAGE (le point cle) :
-      - Si, juste avant de tout perdre (0,0,0), le capteur du MILIEU tenait encore
-        la ligne -> la ligne etait centree puis a disparu d'un coup -> c'est un TROU
-        (ligne discontinue) -> on maintient le cap pour le franchir.
-      - Si le milieu ne voyait deja plus la ligne (on partait sur un cote) -> c'est
-        une sortie de VIRAGE -> recuperation immediate.
-
-    Optimisation reactivite : on n'envoie un ordre au moteur/servo que lorsqu'il
-    CHANGE (evite de spammer drive()/turn() a chaque tour).
+ 
+    Cle du probleme des virages : on braque plus FRANCHEMENT et on RALENTIT plus
+    en virage, pour reagir a temps et eviter que les 3 capteurs sortent ensemble
+    (ce qui serait pris a tort pour une ligne discontinue).
+ 
+    Distinction TROU vs VIRAGE :
+      - Un TROU (ligne discontinue) n'arrive que sur une portion DROITE.
+      - Si on braquait (dernier_braquage != centre), une perte = sortie de virage
+        -> recuperation immediate, jamais traite comme un trou.
+ 
+    Optimisation : on n'envoie un ordre au moteur/servo que lorsqu'il CHANGE.
     """
     ANGLE_CENTRE = 90
-    ANGLE_45_GAUCHE = 100     # virage doux gauche
-    ANGLE_45_DROITE = 80      # virage doux droite
+    # Virages plus FRANCS qu'avant (on reagit plus tot/fort)
+    ANGLE_45_GAUCHE = 115     # virage doux gauche  (ecart 25)
+    ANGLE_45_DROITE = 65      # virage doux droite  (ecart 25)
     ANGLE_FOND_GAUCHE = 140   # virage serre gauche
     ANGLE_FOND_DROITE = 40    # virage serre droite
-
+ 
     VITESSE = 20
     VITESSE_RECUL = 15
     DELAI_GAP_BLANC = 1.2     # secondes max pour franchir un trou
-
+ 
     dernier_braquage = ANGLE_CENTRE
-    dernier_type = "droit"          # 'droit' | '45' | 'fond'
-    dernier_etat = (0, 1, 0)        # dernier etat des capteurs quand la ligne etait visible
     temps_perte = None
-
+ 
     # Memoire des derniers ordres envoyes (pour ne renvoyer que si ca change)
     angle_actuel = None
     vitesse_actuelle = None
-    sens_actuel = None              # 'avant' | 'arriere'
-
+    sens_actuel = None        # 'avant' | 'arriere'
+ 
     def appliquer(angle, vitesse, sens):
         """Envoie les ordres au servo/moteur SEULEMENT s'ils ont change."""
         nonlocal angle_actuel, vitesse_actuelle, sens_actuel
@@ -164,50 +164,43 @@ def suivi_ligne_noire(capteur, moteur, direction):
                 moteur.reverse(vitesse)
             vitesse_actuelle = vitesse
             sens_actuel = sens
-
+ 
     while True:
         gauche, milieu, droite = capteur.getState()
         ligne_visible = (gauche or milieu or droite)
-
+ 
         if ligne_visible:
             temps_perte = None
-            dernier_etat = (gauche, milieu, droite)   # on memorise ce dernier etat vu
-
+ 
             # --- Tout droit ---
             if (milieu and not gauche and not droite) \
                or (gauche and milieu and droite) \
                or (droite and gauche and not milieu):
                 appliquer(ANGLE_CENTRE, VITESSE, "avant")
                 dernier_braquage = ANGLE_CENTRE
-                dernier_type = "droit"
-
-            # --- Virage doux (milieu + un cote) ---
+ 
+            # --- Virage doux (milieu + un cote) : on RALENTIT bien ---
             elif milieu and gauche:
-                appliquer(ANGLE_45_GAUCHE, int(VITESSE * 0.8), "avant")
+                appliquer(ANGLE_45_GAUCHE, int(VITESSE * 0.6), "avant")
                 dernier_braquage = ANGLE_45_GAUCHE
-                dernier_type = "45"
             elif milieu and droite:
-                appliquer(ANGLE_45_DROITE, int(VITESSE * 0.8), "avant")
+                appliquer(ANGLE_45_DROITE, int(VITESSE * 0.6), "avant")
                 dernier_braquage = ANGLE_45_DROITE
-                dernier_type = "45"
-
-            # --- Virage serre (un seul cote, sans milieu) ---
+ 
+            # --- Virage serre (un seul cote) : on ralentit ENCORE plus ---
             elif gauche and not milieu and not droite:
-                appliquer(ANGLE_FOND_GAUCHE, VITESSE, "avant")
+                appliquer(ANGLE_FOND_GAUCHE, int(VITESSE * 0.5), "avant")
                 dernier_braquage = ANGLE_FOND_GAUCHE
-                dernier_type = "fond"
             elif droite and not milieu and not gauche:
-                appliquer(ANGLE_FOND_DROITE, VITESSE, "avant")
+                appliquer(ANGLE_FOND_DROITE, int(VITESSE * 0.5), "avant")
                 dernier_braquage = ANGLE_FOND_DROITE
-                dernier_type = "fond"
-
+ 
         else:
-            # --- Ligne perdue (0,0,0) : trou ou sortie de virage ? ---
-            _, milieu_avant, _ = dernier_etat
-
-            if milieu_avant:
-                # Le milieu tenait encore la ligne juste avant -> TROU (ligne discontinue)
-                # On maintient le cap pour franchir le trou.
+            # --- Ligne perdue (0,0,0) ---
+            # Un TROU n'arrive que si on allait DROIT. Si on braquait, c'est une
+            # sortie de virage -> recuperation immediate.
+            if dernier_braquage == ANGLE_CENTRE:
+                # On allait droit -> peut-etre un trou -> tenter de franchir
                 if temps_perte is None:
                     temps_perte = time.time()
                 if time.time() - temps_perte < DELAI_GAP_BLANC:
@@ -216,17 +209,13 @@ def suivi_ligne_noire(capteur, moteur, direction):
                     # Trou trop long -> vraie perte -> reculer droit
                     appliquer(ANGLE_CENTRE, VITESSE_RECUL, "arriere")
             else:
-                # Le milieu ne voyait deja plus la ligne -> sortie de VIRAGE
-                # Recuperation immediate selon le dernier braquage.
-                if dernier_braquage == ANGLE_FOND_GAUCHE:
+                # On braquait -> sortie de virage -> contre-braquage + recul immediat
+                if dernier_braquage in (ANGLE_FOND_GAUCHE, ANGLE_45_GAUCHE):
                     appliquer(ANGLE_FOND_DROITE, VITESSE_RECUL, "arriere")
-                elif dernier_braquage == ANGLE_FOND_DROITE:
-                    appliquer(ANGLE_FOND_GAUCHE, VITESSE_RECUL, "arriere")
                 else:
-                    appliquer(ANGLE_CENTRE, VITESSE_RECUL, "arriere")
-
+                    appliquer(ANGLE_FOND_GAUCHE, VITESSE_RECUL, "arriere")
+ 
         time.sleep(0.01)
-
 
 # ==========================================================================
 # MISSIONS A VENIR
