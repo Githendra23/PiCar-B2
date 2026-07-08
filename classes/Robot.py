@@ -22,7 +22,7 @@ class Robot :
         self.direction = Direction.Direction()
         
         self.feuxAvant = FeuxAvant.FeuxAvant()
-        self.feuxArriere = FeuxArriere.FeuxArriere(14)
+        self.feuxArriere = FeuxArriere.FeuxArriere()
         
         self.ledGaucheBas = LEDGaucheBas.LEDGaucheBas()
         self.ledDroitBas = LEDDroitBas.LEDDroitBas()
@@ -201,11 +201,13 @@ class Robot :
         while True :
             self.stopEngine()
 
+            # On récupère les obstacles autour du robot
             matriceObstacles = self.tourelle.getMatrixObstacles(step,printAngle=False)
             # print(matriceObstacles)
             matriceBinaire = Tourelle.toBinary(matriceObstacles, distanceAlerte)
 
 
+            # On récupère la plus longue portion libre autour du robot
             minAngle, maxAngle = self.getLargestFreeBand(matriceBinaire, step)
             if(minAngle == maxAngle) :
                 print("Pépin !")
@@ -213,6 +215,7 @@ class Robot :
                 maxAngle = 180
             print(f"Min : {minAngle}° et Max : {maxAngle}")
 
+            # On se dirige vers la portion libre
             angleBraquage = (minAngle + maxAngle)/2
             print(f"Angle braquage : {angleBraquage}°")
             self.direction.turn(angleBraquage)
@@ -226,13 +229,21 @@ class Robot :
 
             self.stopEngine()
             self.tourelle.reset()
-            
+
+
+            if(self.tourelle.getDistance() < 150) :
+                self.reverse(speed)
+                self.direction.turn(180-angleBraquage)
+                time.sleep(1)
+
+            self.direction.reset()
             self.drive(speed)
+
+            # Au cas où le robot passe sur la bordure noire
             etat = self.capteurSuiviLigne.getState()
             gauche, milieu, droite = etat
             print(f"Bande noire : {gauche},{milieu},{droite}")
             if(self.blackLineDetected()) :
-                
                 reverse_time = 0.2
                 if(etat == (0,0,1)) :
                     self.direction.turn(MOST_LEFT)

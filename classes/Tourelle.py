@@ -10,6 +10,16 @@ ANGLE_MIN = 0
 # AJOUTER LES TRUCS POUR LA CAMÉRA
 ############################
 
+def getNearestObstacleAngle(matrix) :
+    minimum = matrix[0]
+    angle = 0
+    for i in range(len(matrix)) :
+        if(matrix[i] == -1) :
+            continue
+        if(matrix[i] < minimum) :
+            angle = i
+    return angle
+
 # Affiche les obstacles avec des 0 (si pas d'obstacle) et des 1 (si obstacle)
 def printBinaryMatrixObstacles(matriceBinaire) :
     for i in range(len(matriceBinaire)) :
