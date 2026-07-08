@@ -146,7 +146,7 @@ def suivi_ligne_noire(capteur, moteur, direction):
             temps_perte = None
 
             # --- Tout droit ---
-            if (milieu and not gauche and not droite) or (gauche and milieu and droite):
+            if (milieu and not gauche and not droite) or (gauche and milieu and droite) or (droite and gauche and not milieu):
                 direction.turn(ANGLE_CENTRE)
                 moteur.drive(VITESSE)
                 dernier_braquage = ANGLE_CENTRE
