@@ -74,12 +74,16 @@ class Robot :
         thread.start()
 
     def suiviLigne(self) :
-        speed = 25
+        HIGH_SPEED = 35
+        MID_SPEED = 30
+        LOW_SPEED = 20
+
         reverse_speed = 15
-        MOST_LEFT = 130
-        MID_LEFT = 110
-        MID_RIGHT = 70
-        MOST_RIGHT = 50
+        CENTER = 90
+        MOST_LEFT = CENTER+40
+        MID_LEFT = CENTER+15
+        MID_RIGHT = CENTER-15
+        MOST_RIGHT = CENTER-40
 
         self.stopEngine()
         self.tourelle.reset()
@@ -103,49 +107,57 @@ class Robot :
 
                 continue # Pour ne pas traiter les cas de détection de ligne en-dessous
             else :
-                self.drive(speed)
+                self.drive(MID_SPEED)
 
             etat = self.capteurSuiviLigne.getState()
+            gauche,milieu,droite = etat
+            print(f"{gauche}.{milieu}.{droite}")
 
             if(etat == (0,0,0)) : # Pas de ligne noire
                 if(previous_state == (1,1,1)) :
                     time.sleep(0.75)
                 else :
                     self.reverse(reverse_speed)
-                    # time.sleep(0.2)  
+                    time.sleep(0.25)  
 
             elif(etat == (1,0,0)) : # Virage fort à gauche
-                self.stopEngine()
-                self.direction.turn(MOST_RIGHT)
-                self.reverse(15)
-                time.sleep(0.5)
+                # self.stopEngine()
+                # self.direction.turn(MOST_RIGHT)
+                # self.reverse(15)
+                # time.sleep(0.25)
+                # self.direction.turn(MOST_LEFT)
+                # self.drive(LOW_SPEED)
+                # time.sleep(0.25)
+                # self.direction.reset()
                 self.direction.turn(MOST_LEFT)
-                self.drive(15)
-                time.sleep(0.5)
+                self.drive(LOW_SPEED)
+                time.sleep(0.25)
                 self.direction.reset()
 
             elif(etat == (0,0,1)) : # Virage fort à droite
                 self.stopEngine()
                 self.direction.turn(MOST_LEFT)
                 self.reverse(15)
-                time.sleep(0.5)
+                time.sleep(0.25)
                 self.direction.turn(MOST_RIGHT)
-                self.drive(15)
-                time.sleep(0.5)
+                self.drive(LOW_SPEED)
+                time.sleep(0.25)
                 self.direction.reset()
 
             elif(etat == (0,1,1)) :
                 angle = MID_RIGHT
-                self.direction.turn(angle) # Tourner à droite de 20°
+                self.drive(MID_SPEED)
+                self.direction.turn(MID_RIGHT) # Tourner à droite de 20°
                 print(f"On tourne à droite de {abs(self.direction.ANGLE_CENTER-angle)}°.")
                 time.sleep(0.2)
                 self.direction.reset()
 
             elif(etat == (1,1,1)) : # Ligne noire => aller tout droit
-                self.drive(speed)
+                self.drive(HIGH_SPEED)
 
             elif(etat == (1,1,0)) :
                 angle = MID_LEFT
+                self.drive(MID_SPEED)
                 self.direction.turn(angle) # Tourner à gauche de 20°
                 print(f"On tourne à gauche de {abs(self.direction.ANGLE_CENTER-angle)}°.")
                 time.sleep(0.2)
@@ -283,8 +295,8 @@ if __name__ == '__main__':
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
-        robot.detectionObstacle()
-
+        # robot.detectionObstacle()
+        robot.suiviLigne()
         # while True :
         #     angleX = int(input("Angle : "))
         #     robot.tourelle.turnXAxis(angleX)
