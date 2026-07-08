@@ -125,6 +125,8 @@ def suivre_ligne_rouge(camera, moteur, direction, feuxAvant=None):
                 moteur.stop()
                 if feuxAvant:
                     feuxAvant.off()
+    
+    time.sleep(0.01)
 
 
 # ==========================================================================
