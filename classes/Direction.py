@@ -8,7 +8,7 @@ class Direction:
 
         self.CHANNEL = 0
 
-        self.ANGLE_MIN = 50 # droite
+        self.ANGLE_MIN = 20 # droite
         self.ANGLE_MAX = 130 # gauche
         self.ANGLE_CENTER = 90
 
