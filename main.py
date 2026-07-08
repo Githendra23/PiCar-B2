@@ -139,6 +139,9 @@ def suivi_ligne_noire(capteur, moteur, direction):
 
     while True:
         gauche, milieu, droite = capteur.getState()
+
+        print(f"gauche : ${gauche}, milieu : ${milieu}, droite : ${droite}")
+
         ligne_visible = (gauche or milieu or droite)
 
         if ligne_visible:
