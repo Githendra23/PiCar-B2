@@ -10,6 +10,17 @@ ANGLE_MIN = 0
 # AJOUTER LES TRUCS POUR LA CAMÉRA
 ############################
 
+
+def getNearestObstacleAngle(matrix) :
+    minimum = matrix[0]
+    angle = 0
+    for i in range(len(matrix)) :
+        if(matrix[i] == -1) :
+            continue
+        if(matrix[i] < minimum) :
+            angle = i
+    return angle
+
 # Affiche les obstacles avec des 0 (si pas d'obstacle) et des 1 (si obstacle)
 def printBinaryMatrixObstacles(matriceBinaire) :
     for i in range(len(matriceBinaire)) :
@@ -26,7 +37,7 @@ def toBinary(matrix, distanceAlerte) :
             matriceBinaire.append(1)
         else :
             matriceBinaire.append(0)
-    print("Matrice binaire : ",matriceBinaire)
+    # print("Matrice binaire : ",matriceBinaire)
     return matriceBinaire
 
 class Tourelle:
@@ -57,6 +68,13 @@ class Tourelle:
         else:
             ValueError("Tourelle rotation Y - Angle hors de portée")
     
+    def printAngles(self):
+        """
+        Affiche les angles actuels de la tourelle.
+        """
+        print(f"Angle X : {self.angle_x_actuel}°")
+        print(f"Angle Y : {self.angle_y_actuel}°")
+
     def release_x_axis(self):
         """
         Coupe le signal PMW du servo horizontal.
@@ -65,12 +83,13 @@ class Tourelle:
         self.controller.release_servo(self.CHANNEL_X_AXIS)
 
     # Renvoie la matrice des obstacles autour de la tourelle
-    def getMatrixObstacles(self, step, printAngle : bool) :
+    def getMatrixObstacles(self, step, yAngle ,timeSurround, printAngle : bool) :
         matrice = [-1]*180
         # anglesDetection = [0,45,90,135,180]
         self.reset()
 
         self.turnXAxis(0)
+        self.turnYAxis(yAngle)
         time.sleep(1)
         
         for angle in range(0, 180, step) :
@@ -78,7 +97,7 @@ class Tourelle:
             matrice[angle] = self.capteurUltrason.distance()
             if(printAngle) :
                 print(f"Angle : {angle}°")
-            time.sleep(0.3)
+            time.sleep(timeSurround)
 
         self.reset()
         return matrice
@@ -96,14 +115,14 @@ if __name__ == "__main__" :
     tourelle = Tourelle()
 
     try :
-        # x_angle = int(input("Entrez l'angle sur l'axe X : "))
-        # y_angle = int(input("Entrez l'angle sur l'axe Y : "))
+        x_angle = int(input("Entrez l'angle sur l'axe X : "))
+        y_angle = int(input("Entrez l'angle sur l'axe Y : "))
 
-        # tourelle.turnXAxis(x_angle)
-        # tourelle.turnYAxis(y_angle)
-        # # tourelle.print_angle()
+        tourelle.turnXAxis(x_angle)
+        tourelle.turnYAxis(y_angle)
+        # tourelle.print_angle()
         
-        tourelle.reset()
+        # tourelle.reset()
         time.sleep(1)
             
     except KeyboardInterrupt :
