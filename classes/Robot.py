@@ -205,18 +205,37 @@ class Robot :
     def detectionObstacle(self) :
         MOST_LEFT = 140
         MOST_RIGHT = 40
-        distanceAlerte = 150
-        speed = 15
-        self.tourelle.reset() # On centre la tourelle
+        distanceAlerte = 200
+        speed = 20
+        self.tourelle.turnXAxis(90) # On centre la tourelle
         step = 18
+        yAngle = 90
 
         while True :
             self.stopEngine()
+            self.direction.reset()
+            self.tourelle.turnXAxis(90)
+            self.tourelle.turnYAxis(yAngle)
 
             # On récupère les obstacles autour du robot
-            matriceObstacles = self.tourelle.getMatrixObstacles(step,printAngle=False)
+            matriceObstacles = self.tourelle.getMatrixObstacles(step,yAngle,timeSurround=0.5,printAngle=True)
             # print(matriceObstacles)
             matriceBinaire = Tourelle.toBinary(matriceObstacles, distanceAlerte)
+            
+            nearestObstacleAngle = Tourelle.getNearestObstacleAngle(matriceObstacles) - step
+            print(f"Nearest angle : {nearestObstacleAngle}")
+            if(matriceObstacles[nearestObstacleAngle] < distanceAlerte) :
+                self.tourelle.turnXAxis(nearestObstacleAngle)
+                self.tourelle.turnYAxis(yAngle)
+                self.direction.turn(nearestObstacleAngle)
+                time.sleep(0.5)
+
+                while(self.tourelle.getDistance() < distanceAlerte) :
+                    self.reverse(speed)
+                    print("DISTANCE : ",self.tourelle.getDistance())
+                    time.sleep(0.1)
+                self.tourelle.printAngles()
+                continue
 
 
             # On récupère la plus longue portion libre autour du robot
@@ -225,7 +244,7 @@ class Robot :
                 print("Pépin !")
                 minAngle = 0
                 maxAngle = 180
-            print(f"Min : {minAngle}° et Max : {maxAngle}")
+            # print(f"Min : {minAngle}° et Max : {maxAngle}")
 
             # On se dirige vers la portion libre
             angleBraquage = (minAngle + maxAngle)/2
@@ -234,22 +253,22 @@ class Robot :
 
             forwardTime = 0
             self.tourelle.turnXAxis(angleBraquage)
-            while(not(self.blackLineDetected()) and (forwardTime < 2) and (self.tourelle.getDistance() >= 150)) :
+            while(not(self.blackLineDetected()) and (forwardTime < 2) and (self.tourelle.getDistance() >= distanceAlerte)) :
                 self.drive(speed)
-                forwardTime = forwardTime + 0.1
-                time.sleep(0.1)
+                delay = 0.05
+                forwardTime = forwardTime + delay
+                time.sleep(delay)
 
-            self.stopEngine()
-            self.tourelle.reset()
-
-
-            if(self.tourelle.getDistance() < 150) :
-                self.reverse(speed)
-                self.direction.turn(180-angleBraquage)
-                time.sleep(1)
 
             self.direction.reset()
             self.drive(speed)
+
+            if(self.tourelle.getDistance() < distanceAlerte) :
+                while(self.tourelle.getDistance() < distanceAlerte) :
+                    self.direction.turn(30)
+                    self.reverse(speed)
+                print("ICI 2")
+                continue
 
             # Au cas où le robot passe sur la bordure noire
             etat = self.capteurSuiviLigne.getState()
@@ -295,8 +314,8 @@ if __name__ == '__main__':
     print(f"Niveau de batterie : {robot.getBatteryPercentage()}")
     
     try:
-        # robot.detectionObstacle()
-        robot.suiviLigne()
+        robot.detectionObstacle()
+        # robot.suiviLigne()
         # while True :
         #     angleX = int(input("Angle : "))
         #     robot.tourelle.turnXAxis(angleX)
